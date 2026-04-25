@@ -297,15 +297,15 @@ function HistoryRow({ attempt, index, prevPct }: { attempt: Attempt; index: numb
 // ─────────────────────────────────────────────────────────
 // Étoiles d'affichage (read-only) — utilisées dans la carte série
 // ─────────────────────────────────────────────────────────
-function StarDisplay({ avg, total }: { avg: number; total: number }) {
+function StarDisplay({ avg }: { avg: number }) {
   const filled = Math.round(avg);
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex gap-[3px]">
+    <div className="flex w-full items-center gap-2">
+      <div className="flex flex-1 items-center justify-between">
         {Array.from({ length: 10 }, (_, i) => (
           <Star
             key={i}
-            className={`h-[14px] w-[14px] transition-colors ${
+            className={`h-[15px] w-[15px] transition-colors ${
               i < filled
                 ? "text-amber-400 dark:text-amber-300"
                 : "text-border dark:text-border"
@@ -315,11 +315,8 @@ function StarDisplay({ avg, total }: { avg: number; total: number }) {
           />
         ))}
       </div>
-      <span className="text-sm font-bold tabular-nums text-amber-500 dark:text-amber-400">
+      <span className="shrink-0 text-sm font-bold tabular-nums text-amber-500 dark:text-amber-400">
         {avg.toFixed(1)}
-      </span>
-      <span className="text-[11px] text-muted-foreground">
-        {total} vote{total > 1 ? "s" : ""}
       </span>
     </div>
   );
@@ -503,7 +500,7 @@ export default function SerieIVASPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
                 >
-                  <StarDisplay avg={avg} total={totalVotes} />
+                  <StarDisplay avg={avg} />
                 </motion.div>
               </div>
 
