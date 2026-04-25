@@ -18,6 +18,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Star,
 } from "lucide-react";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
@@ -361,6 +362,142 @@ function HistoryRow({
 }
 
 // ─────────────────────────────────────────────────────────
+// Notation par étoiles (sur 10)
+// ─────────────────────────────────────────────────────────
+const INITIAL_VOTES = 47;
+const INITIAL_SUM = Math.round(7.8 * INITIAL_VOTES); // avg 7.8
+
+function StarRating() {
+  const [hover, setHover] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [totalVotes, setTotalVotes] = useState(INITIAL_VOTES);
+  const [totalSum, setTotalSum] = useState(INITIAL_SUM);
+
+  const avg = totalSum / totalVotes;
+  const displayRating = hover ?? selected ?? avg;
+  const hasVoted = selected !== null;
+
+  function handleSelect(star: number) {
+    if (hasVoted) return;
+    setSelected(star);
+    setTotalSum((s) => s + star);
+    setTotalVotes((v) => v + 1);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.75, ease: "easeOut" }}
+    >
+      <Card>
+        <CardContent className="p-5">
+          {/* En-tête */}
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Note des étudiants
+            </p>
+            <span className="text-[11px] font-medium text-muted-foreground">
+              {totalVotes} vote{totalVotes > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Score affiché */}
+          <div className="mb-4 flex items-baseline gap-2">
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={Math.round(displayRating * 10)}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.15 }}
+                className="text-4xl font-bold tabular-nums text-foreground"
+              >
+                {displayRating.toFixed(1)}
+              </motion.span>
+            </AnimatePresence>
+            <span className="text-sm font-semibold text-muted-foreground">/10</span>
+          </div>
+
+          {/* Étoiles */}
+          <div
+            className="flex gap-1"
+            onMouseLeave={() => !hasVoted && setHover(null)}
+          >
+            {Array.from({ length: 10 }, (_, i) => {
+              const star = i + 1;
+              const filled = star <= Math.round(hover ?? selected ?? avg);
+              return (
+                <motion.button
+                  key={star}
+                  disabled={hasVoted}
+                  onClick={() => handleSelect(star)}
+                  onMouseEnter={() => !hasVoted && setHover(star)}
+                  whileTap={hasVoted ? {} : { scale: 1.3 }}
+                  transition={{ duration: 0.12 }}
+                  className={`rounded p-0.5 focus:outline-none ${
+                    hasVoted ? "cursor-default" : "cursor-pointer"
+                  }`}
+                  aria-label={`${star} sur 10`}
+                >
+                  <motion.div
+                    animate={{
+                      scale: hover === star && !hasVoted ? 1.25 : 1,
+                    }}
+                    transition={{ duration: 0.12 }}
+                  >
+                    <Star
+                      className={`h-6 w-6 transition-colors duration-100 ${
+                        filled
+                          ? "text-amber-400 dark:text-amber-300"
+                          : "text-muted"
+                      }`}
+                      fill={filled ? "currentColor" : "none"}
+                      strokeWidth={filled ? 0 : 1.5}
+                    />
+                  </motion.div>
+                </motion.button>
+              );
+            })}
+          </div>
+
+          {/* Message après vote */}
+          <AnimatePresence>
+            {hasVoted && (
+              <motion.p
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400"
+              >
+                Merci pour ta note — {selected}/10 enregistré !
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          {/* Barre de progression moyenne */}
+          <div className="mt-4">
+            <div className="mb-1 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span>Moyenne générale</span>
+              <span>{avg.toFixed(1)}/10</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <motion.div
+                className="h-full rounded-full bg-amber-400 dark:bg-amber-300"
+                initial={{ width: 0 }}
+                animate={{ width: `${(avg / 10) * 100}%` }}
+                transition={{ duration: 0.9, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────
 // Page
 // ─────────────────────────────────────────────────────────
 export default function SerieIVASPage() {
@@ -471,6 +608,21 @@ export default function SerieIVASPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Notation */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.7 }}
+        className="flex items-center gap-2 px-1 pt-3"
+      >
+        <Star className="h-4 w-4 fill-amber-400 text-amber-400 dark:fill-amber-300 dark:text-amber-300" />
+        <h3 className="m-0 text-sm font-bold tracking-tight text-foreground">
+          Notation
+        </h3>
+      </motion.div>
+
+      <StarRating />
     </div>
   );
 }
