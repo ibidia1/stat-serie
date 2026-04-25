@@ -23,9 +23,6 @@ import {
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 
-// ─────────────────────────────────────────────────────────
-// Hook : suit la classe .dark sur <html>
-// ─────────────────────────────────────────────────────────
 function useIsDark() {
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
@@ -47,7 +44,6 @@ function useIsDark() {
 // ─────────────────────────────────────────────────────────
 type DonutDatum = { name: string; light: string; dark: string; value: number };
 type Tier = "good" | "mid" | "bad";
-
 type Attempt = {
   num: number;
   done: number;
@@ -86,52 +82,45 @@ const attempts: Attempt[] = [
   { num: 1, done: 24, total: 27, score: 13, scoreMax: 24, date: "21/03/2026", tier: "bad" },
 ];
 
+const INITIAL_VOTES = 47;
+const INITIAL_SUM   = Math.round(7.8 * INITIAL_VOTES);
+
 const tierStyles: Record<
   Tier,
   { badge: string; pill: string; bar: string; row: string }
 > = {
   good: {
-    badge:
-      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-400",
-    pill: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
-    bar: "bg-emerald-500 dark:bg-emerald-400",
-    row: "bg-emerald-50/40 dark:bg-emerald-950/10",
+    badge: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-400",
+    pill:  "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
+    bar:   "bg-emerald-500 dark:bg-emerald-400",
+    row:   "bg-emerald-50/40 dark:bg-emerald-950/10",
   },
   mid: {
-    badge:
-      "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-400",
-    pill: "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
-    bar: "bg-orange-500 dark:bg-orange-400",
-    row: "bg-orange-50/40 dark:bg-orange-950/10",
+    badge: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-400",
+    pill:  "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
+    bar:   "bg-orange-500 dark:bg-orange-400",
+    row:   "bg-orange-50/40 dark:bg-orange-950/10",
   },
   bad: {
-    badge:
-      "border-red-200 bg-red-50 text-red-700 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-400",
-    pill: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
-    bar: "bg-red-500 dark:bg-red-400",
-    row: "bg-red-50/40 dark:bg-red-950/10",
+    badge: "border-red-200 bg-red-50 text-red-700 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-400",
+    pill:  "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400",
+    bar:   "bg-red-500 dark:bg-red-400",
+    row:   "bg-red-50/40 dark:bg-red-950/10",
   },
 };
 
-// Renders each sector; expands the active one by 6px
+// ─────────────────────────────────────────────────────────
+// Donut helpers
+// ─────────────────────────────────────────────────────────
 function sectorShape(props: PieSectorShapeProps) {
   const { isActive, outerRadius, ...rest } = props;
   return <Sector {...rest} outerRadius={isActive ? outerRadius + 6 : outerRadius} />;
 }
 
-// ─────────────────────────────────────────────────────────
-// Donut chart with hover tooltip in center
-// ─────────────────────────────────────────────────────────
 function HoverDonut({
-  data,
-  title,
-  delay = 0,
-  isDark,
+  data, title, delay = 0, isDark,
 }: {
-  data: DonutDatum[];
-  title: string;
-  delay?: number;
-  isDark: boolean;
+  data: DonutDatum[]; title: string; delay?: number; isDark: boolean;
 }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const active = activeIndex !== null ? data[activeIndex] : null;
@@ -152,12 +141,9 @@ function HoverDonut({
           <PieChart>
             <Pie
               data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={58}
-              outerRadius={80}
-              paddingAngle={2}
-              dataKey="value"
+              cx="50%" cy="50%"
+              innerRadius={58} outerRadius={80}
+              paddingAngle={2} dataKey="value"
               shape={sectorShape}
               onMouseEnter={(_: unknown, i: number) => setActiveIndex(i)}
               onMouseLeave={() => setActiveIndex(null)}
@@ -170,7 +156,6 @@ function HoverDonut({
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <AnimatePresence mode="wait">
             {active && (
@@ -201,21 +186,13 @@ function HoverDonut({
 }
 
 // ─────────────────────────────────────────────────────────
-// Cas cliniques vs QCM simples ratio
+// Ratio clinique / simples
 // ─────────────────────────────────────────────────────────
-function InteractiveRatio({
-  cas,
-  simples,
-  delay = 0,
-}: {
-  cas: number;
-  simples: number;
-  delay?: number;
-}) {
+function InteractiveRatio({ cas, simples, delay = 0 }: { cas: number; simples: number; delay?: number }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const total = cas + simples;
   const items = [
-    { name: "Cas cliniques", value: cas, isPrimary: true },
+    { name: "Cas cliniques", value: cas,     isPrimary: true },
     { name: "QCM simples",   value: simples, isPrimary: false },
   ];
 
@@ -226,15 +203,11 @@ function InteractiveRatio({
       transition={{ duration: 0.4, delay, ease: "easeOut" }}
       className="mt-5 border-t border-border pt-5"
     >
-      <div
-        className="grid gap-2"
-        style={{ gridTemplateColumns: `${cas}fr ${simples}fr` }}
-      >
+      <div className="grid gap-2" style={{ gridTemplateColumns: `${cas}fr ${simples}fr` }}>
         {items.map((item, i) => {
           const pct = Math.round((item.value / total) * 100);
-          const isActive = activeIndex === i;
+          const isActive   = activeIndex === i;
           const isInactive = activeIndex !== null && activeIndex !== i;
-
           return (
             <motion.div
               key={item.name}
@@ -247,26 +220,18 @@ function InteractiveRatio({
               animate={{
                 opacity: isInactive ? 0.45 : 1,
                 scale: isActive ? 1.025 : 1,
-                boxShadow: isActive
-                  ? "0 12px 28px rgba(79,124,255,0.28)"
-                  : "0 0 0 rgba(0,0,0,0)",
+                boxShadow: isActive ? "0 12px 28px rgba(79,124,255,0.28)" : "0 0 0 rgba(0,0,0,0)",
               }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               onMouseEnter={() => setActiveIndex(i)}
               onMouseLeave={() => setActiveIndex(null)}
             >
-              <div className="text-xs font-semibold leading-none opacity-90">
-                {item.name}
-              </div>
+              <div className="text-xs font-semibold leading-none opacity-90">{item.name}</div>
               <div className="mt-2 flex items-baseline gap-1.5">
-                <span className="text-2xl font-bold leading-none tabular-nums">
-                  {item.value}
-                </span>
+                <span className="text-2xl font-bold leading-none tabular-nums">{item.value}</span>
                 <span className="text-xs font-medium opacity-75">questions</span>
               </div>
-              <div className="absolute right-3 top-3 text-[11px] font-bold tabular-nums opacity-50">
-                {pct}%
-              </div>
+              <div className="absolute right-3 top-3 text-[11px] font-bold tabular-nums opacity-50">{pct}%</div>
             </motion.div>
           );
         })}
@@ -276,28 +241,17 @@ function InteractiveRatio({
 }
 
 // ─────────────────────────────────────────────────────────
-// Attempt history row
+// Ligne historique
 // ─────────────────────────────────────────────────────────
-function HistoryRow({
-  attempt,
-  index,
-  prevPct,
-}: {
-  attempt: Attempt;
-  index: number;
-  prevPct: number | null;
-}) {
-  const pct = (attempt.score / attempt.scoreMax) * 100;
+function HistoryRow({ attempt, index, prevPct }: { attempt: Attempt; index: number; prevPct: number | null }) {
+  const pct    = (attempt.score / attempt.scoreMax) * 100;
   const styles = tierStyles[attempt.tier];
-  const delta = prevPct !== null ? Math.round(pct - prevPct) : null;
-  const TrendIcon =
-    delta === null ? Minus : delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+  const delta  = prevPct !== null ? Math.round(pct - prevPct) : null;
+  const TrendIcon = delta === null ? Minus : delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
   const trendColor =
-    delta === null || delta === 0
-      ? "text-muted-foreground"
-      : delta > 0
-      ? "text-emerald-600 dark:text-emerald-400"
-      : "text-red-600 dark:text-red-400";
+    delta === null || delta === 0 ? "text-muted-foreground"
+    : delta > 0 ? "text-emerald-600 dark:text-emerald-400"
+    : "text-red-600 dark:text-red-400";
 
   return (
     <motion.div
@@ -306,35 +260,21 @@ function HistoryRow({
       transition={{ duration: 0.35, delay: 0.55 + index * 0.08, ease: "easeOut" }}
       className={`grid grid-cols-[44px_minmax(70px,1fr)_minmax(160px,2fr)_auto] items-center gap-3 rounded-xl px-2 py-2.5 transition-colors ${styles.row} hover:opacity-100`}
     >
-      <div
-        className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums ${styles.badge}`}
-      >
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums ${styles.badge}`}>
         #{attempt.num}
       </div>
-
       <div>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          QCM faits
-        </div>
-        <div className="font-bold tabular-nums text-foreground">
-          {attempt.done}/{attempt.total}
-        </div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">QCM faits</div>
+        <div className="font-bold tabular-nums text-foreground">{attempt.done}/{attempt.total}</div>
       </div>
-
       <div>
         <div className="mb-1.5 flex items-center gap-2">
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${styles.pill}`}
-          >
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${styles.pill}`}>
             {attempt.score}/{attempt.scoreMax}
           </span>
-          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-            {Math.round(pct)}%
-          </span>
+          <span className="text-xs font-semibold tabular-nums text-muted-foreground">{Math.round(pct)}%</span>
           {delta !== null && (
-            <span
-              className={`ml-auto inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums ${trendColor}`}
-            >
+            <span className={`ml-auto inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums ${trendColor}`}>
               <TrendIcon className="h-3 w-3" />
               {delta > 0 ? `+${delta}` : delta}
             </span>
@@ -345,44 +285,63 @@ function HistoryRow({
             className={`h-full rounded-full ${styles.bar}`}
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
-            transition={{
-              duration: 0.85,
-              delay: 0.65 + index * 0.08,
-              ease: "easeOut",
-            }}
+            transition={{ duration: 0.85, delay: 0.65 + index * 0.08, ease: "easeOut" }}
           />
         </div>
       </div>
-
-      <div className="text-right text-xs font-medium tabular-nums text-muted-foreground">
-        {attempt.date}
-      </div>
+      <div className="text-right text-xs font-medium tabular-nums text-muted-foreground">{attempt.date}</div>
     </motion.div>
   );
 }
 
 // ─────────────────────────────────────────────────────────
-// Notation par étoiles (sur 10)
+// Étoiles d'affichage (read-only) — utilisées dans la carte série
 // ─────────────────────────────────────────────────────────
-const INITIAL_VOTES = 47;
-const INITIAL_SUM = Math.round(7.8 * INITIAL_VOTES); // avg 7.8
+function StarDisplay({ avg, total }: { avg: number; total: number }) {
+  const filled = Math.round(avg);
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex gap-[3px]">
+        {Array.from({ length: 10 }, (_, i) => (
+          <Star
+            key={i}
+            className={`h-[14px] w-[14px] transition-colors ${
+              i < filled
+                ? "text-amber-400 dark:text-amber-300"
+                : "text-border dark:text-border"
+            }`}
+            fill={i < filled ? "currentColor" : "none"}
+            strokeWidth={i < filled ? 0 : 1.5}
+          />
+        ))}
+      </div>
+      <span className="text-sm font-bold tabular-nums text-amber-500 dark:text-amber-400">
+        {avg.toFixed(1)}
+      </span>
+      <span className="text-[11px] text-muted-foreground">
+        {total} vote{total > 1 ? "s" : ""}
+      </span>
+    </div>
+  );
+}
 
-function StarRating() {
+// ─────────────────────────────────────────────────────────
+// Widget de notation interactive (fin de série)
+// ─────────────────────────────────────────────────────────
+function StarRating({
+  avg,
+  totalVotes,
+  selected,
+  onSelect,
+}: {
+  avg: number;
+  totalVotes: number;
+  selected: number | null;
+  onSelect: (n: number) => void;
+}) {
   const [hover, setHover] = useState<number | null>(null);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [totalVotes, setTotalVotes] = useState(INITIAL_VOTES);
-  const [totalSum, setTotalSum] = useState(INITIAL_SUM);
-
-  const avg = totalSum / totalVotes;
-  const displayRating = hover ?? selected ?? avg;
-  const hasVoted = selected !== null;
-
-  function handleSelect(star: number) {
-    if (hasVoted) return;
-    setSelected(star);
-    setTotalSum((s) => s + star);
-    setTotalVotes((v) => v + 1);
-  }
+  const hasVoted     = selected !== null;
+  const displayScore = hover ?? selected ?? avg;
 
   return (
     <motion.div
@@ -402,55 +361,46 @@ function StarRating() {
             </span>
           </div>
 
-          {/* Score affiché */}
+          {/* Score animé */}
           <div className="mb-4 flex items-baseline gap-2">
             <AnimatePresence mode="wait">
               <motion.span
-                key={Math.round(displayRating * 10)}
+                key={Math.round(displayScore * 10)}
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
                 transition={{ duration: 0.15 }}
                 className="text-4xl font-bold tabular-nums text-foreground"
               >
-                {displayRating.toFixed(1)}
+                {displayScore.toFixed(1)}
               </motion.span>
             </AnimatePresence>
             <span className="text-sm font-semibold text-muted-foreground">/10</span>
           </div>
 
-          {/* Étoiles */}
-          <div
-            className="flex gap-1"
-            onMouseLeave={() => !hasVoted && setHover(null)}
-          >
+          {/* Étoiles interactives */}
+          <div className="flex gap-1" onMouseLeave={() => !hasVoted && setHover(null)}>
             {Array.from({ length: 10 }, (_, i) => {
-              const star = i + 1;
+              const star   = i + 1;
               const filled = star <= Math.round(hover ?? selected ?? avg);
               return (
                 <motion.button
                   key={star}
                   disabled={hasVoted}
-                  onClick={() => handleSelect(star)}
+                  onClick={() => !hasVoted && onSelect(star)}
                   onMouseEnter={() => !hasVoted && setHover(star)}
                   whileTap={hasVoted ? {} : { scale: 1.3 }}
                   transition={{ duration: 0.12 }}
-                  className={`rounded p-0.5 focus:outline-none ${
-                    hasVoted ? "cursor-default" : "cursor-pointer"
-                  }`}
+                  className={`rounded p-0.5 focus:outline-none ${hasVoted ? "cursor-default" : "cursor-pointer"}`}
                   aria-label={`${star} sur 10`}
                 >
                   <motion.div
-                    animate={{
-                      scale: hover === star && !hasVoted ? 1.25 : 1,
-                    }}
+                    animate={{ scale: hover === star && !hasVoted ? 1.25 : 1 }}
                     transition={{ duration: 0.12 }}
                   >
                     <Star
                       className={`h-6 w-6 transition-colors duration-100 ${
-                        filled
-                          ? "text-amber-400 dark:text-amber-300"
-                          : "text-muted"
+                        filled ? "text-amber-400 dark:text-amber-300" : "text-muted"
                       }`}
                       fill={filled ? "currentColor" : "none"}
                       strokeWidth={filled ? 0 : 1.5}
@@ -461,7 +411,7 @@ function StarRating() {
             })}
           </div>
 
-          {/* Message après vote */}
+          {/* Confirmation */}
           <AnimatePresence>
             {hasVoted && (
               <motion.p
@@ -476,7 +426,7 @@ function StarRating() {
             )}
           </AnimatePresence>
 
-          {/* Barre de progression moyenne */}
+          {/* Barre moyenne */}
           <div className="mt-4">
             <div className="mb-1 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
               <span>Moyenne générale</span>
@@ -502,6 +452,21 @@ function StarRating() {
 // ─────────────────────────────────────────────────────────
 export default function SerieIVASPage() {
   const isDark = useIsDark();
+
+  // État partagé de notation
+  const [totalVotes,    setTotalVotes]    = useState(INITIAL_VOTES);
+  const [totalSum,      setTotalSum]      = useState(INITIAL_SUM);
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
+
+  const avg = totalSum / totalVotes;
+
+  function handleVote(star: number) {
+    if (selectedRating !== null) return;
+    setSelectedRating(star);
+    setTotalSum((s) => s + star);
+    setTotalVotes((v) => v + 1);
+  }
+
   const pctOf = (a: Attempt) => (a.score / a.scoreMax) * 100;
 
   return (
@@ -514,33 +479,45 @@ export default function SerieIVASPage() {
       >
         <Card className="flex flex-row items-center gap-2 px-4 py-3.5">
           <ChevronLeft className="h-5 w-5 cursor-pointer text-muted-foreground" />
-          <h2 className="m-0 text-lg font-bold tracking-tight text-foreground">
-            IVAS
-          </h2>
+          <h2 className="m-0 text-lg font-bold tracking-tight text-foreground">IVAS</h2>
         </Card>
       </motion.div>
 
-      {/* Série card */}
+      {/* Carte série — étoiles entre "27 questions" et "Commencer" */}
       <motion.div
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
       >
         <Card className="bg-gradient-to-br from-card to-primary/[0.03] dark:to-primary/[0.06]">
-          <CardContent className="flex items-center justify-between px-4 py-4 [&:last-child]:pb-4">
-            <div>
-              <p className="text-sm font-bold text-foreground">Série 1 — IVAS</p>
-              <p className="mt-1 text-sm text-muted-foreground">27 questions</p>
+          <CardContent className="px-4 py-4 [&:last-child]:pb-4">
+            <p className="mb-2.5 text-sm font-bold text-foreground">Série 1 — IVAS</p>
+            <div className="flex items-center gap-3">
+              {/* "27 questions" à gauche */}
+              <p className="shrink-0 text-sm text-muted-foreground">27 questions</p>
+
+              {/* Étoiles qui remplissent l'espace central */}
+              <div className="flex flex-1 items-center justify-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
+                >
+                  <StarDisplay avg={avg} total={totalVotes} />
+                </motion.div>
+              </div>
+
+              {/* Bouton à droite */}
+              <Button className="shrink-0 gap-1.5 rounded-lg shadow-md shadow-primary/30">
+                <Play className="h-3 w-3 fill-current" />
+                Commencer
+              </Button>
             </div>
-            <Button className="gap-1.5 rounded-lg shadow-md shadow-primary/30">
-              <Play className="h-3 w-3 fill-current" />
-              Commencer
-            </Button>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Insights heading */}
+      {/* Insights */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -548,32 +525,20 @@ export default function SerieIVASPage() {
         className="flex items-center gap-2 px-1 pt-3"
       >
         <Lightbulb className="h-4 w-4 text-primary" />
-        <h3 className="m-0 text-sm font-bold tracking-tight text-foreground">
-          Insights
-        </h3>
+        <h3 className="m-0 text-sm font-bold tracking-tight text-foreground">Insights</h3>
       </motion.div>
 
       <Card>
         <CardContent className="p-5">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <HoverDonut
-              data={tagData}
-              title="QCM répartis par Tag"
-              delay={0.15}
-              isDark={isDark}
-            />
-            <HoverDonut
-              data={sousCoursData}
-              title="Répartition par sous-cours"
-              delay={0.25}
-              isDark={isDark}
-            />
+            <HoverDonut data={tagData}       title="QCM répartis par Tag"       delay={0.15} isDark={isDark} />
+            <HoverDonut data={sousCoursData} title="Répartition par sous-cours" delay={0.25} isDark={isDark} />
           </div>
           <InteractiveRatio cas={ratioData.cas} simples={ratioData.simples} delay={0.35} />
         </CardContent>
       </Card>
 
-      {/* Statistiques heading */}
+      {/* Statistiques */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -581,9 +546,7 @@ export default function SerieIVASPage() {
         className="flex items-center gap-2 px-1 pt-3"
       >
         <BarChart3 className="h-4 w-4 text-primary" />
-        <h3 className="m-0 text-sm font-bold tracking-tight text-foreground">
-          Statistiques
-        </h3>
+        <h3 className="m-0 text-sm font-bold tracking-tight text-foreground">Statistiques</h3>
       </motion.div>
 
       <Card>
@@ -596,20 +559,17 @@ export default function SerieIVASPage() {
               {attempts.length} tentative{attempts.length > 1 ? "s" : ""}
             </span>
           </div>
-
           <div className="space-y-1">
             {attempts.map((a, i) => {
-              const next = attempts[i + 1];
+              const next    = attempts[i + 1];
               const prevPct = next ? pctOf(next) : null;
-              return (
-                <HistoryRow key={a.num} attempt={a} index={i} prevPct={prevPct} />
-              );
+              return <HistoryRow key={a.num} attempt={a} index={i} prevPct={prevPct} />;
             })}
           </div>
         </CardContent>
       </Card>
 
-      {/* Notation */}
+      {/* Notation — à intégrer à la fenêtre qui apparait en terminant la série */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -618,11 +578,19 @@ export default function SerieIVASPage() {
       >
         <Star className="h-4 w-4 fill-amber-400 text-amber-400 dark:fill-amber-300 dark:text-amber-300" />
         <h3 className="m-0 text-sm font-bold tracking-tight text-foreground">
-          Notation
+          Notation{" "}
+          <span className="font-normal text-muted-foreground">
+            (à intégrer à la fenêtre qui apparaît en terminant la série)
+          </span>
         </h3>
       </motion.div>
 
-      <StarRating />
+      <StarRating
+        avg={avg}
+        totalVotes={totalVotes}
+        selected={selectedRating}
+        onSelect={handleVote}
+      />
     </div>
   );
 }
