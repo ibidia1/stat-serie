@@ -423,21 +423,7 @@ function StarRating({
             )}
           </AnimatePresence>
 
-          {/* Barre moyenne */}
-          <div className="mt-4">
-            <div className="mb-1 flex justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              <span>Moyenne générale</span>
-              <span>{avg.toFixed(1)}/10</span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-              <motion.div
-                className="h-full rounded-full bg-amber-400 dark:bg-amber-300"
-                initial={{ width: 0 }}
-                animate={{ width: `${(avg / 10) * 100}%` }}
-                transition={{ duration: 0.9, ease: "easeOut" }}
-              />
-            </div>
-          </div>
+
         </CardContent>
       </Card>
     </motion.div>
