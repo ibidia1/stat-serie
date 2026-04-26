@@ -241,7 +241,7 @@ function InteractiveRatio({ cas, simples, delay = 0 }: { cas: number; simples: n
 }
 
 // ─────────────────────────────────────────────────────────
-// Carte de tentative
+// Carte de tentative — layout horizontal compact
 // ─────────────────────────────────────────────────────────
 function AttemptCard({ attempt, index, prevPct }: { attempt: Attempt; index: number; prevPct: number | null }) {
   const pct    = (attempt.score / attempt.scoreMax) * 100;
@@ -255,57 +255,55 @@ function AttemptCard({ attempt, index, prevPct }: { attempt: Attempt; index: num
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay: 0.55 + index * 0.08, ease: "easeOut" }}
-      className={`flex flex-col gap-3 rounded-2xl p-4 ${styles.row}`}
+      transition={{ duration: 0.35, delay: 0.55 + index * 0.07, ease: "easeOut" }}
+      className={`flex items-center gap-4 rounded-2xl px-4 py-3 ${styles.row}`}
     >
-      {/* En-tête : badge + date */}
-      <div className="flex items-center justify-between">
+      {/* Badge + date */}
+      <div className="flex shrink-0 items-center gap-2.5">
         <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums ${styles.badge}`}>
           #{attempt.num}
         </div>
-        <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+        <span className="w-[62px] text-[11px] font-medium tabular-nums text-muted-foreground">
           {attempt.date}
         </span>
       </div>
 
-      {/* Score hero */}
-      <div>
+      {/* Score + % + tendance */}
+      <div className="shrink-0 w-[100px]">
         <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold tabular-nums text-foreground">
-            {attempt.score}
-          </span>
-          <span className="text-base font-semibold text-muted-foreground">
-            /{attempt.scoreMax}
-          </span>
+          <span className="text-xl font-bold tabular-nums text-foreground">{attempt.score}</span>
+          <span className="text-sm font-semibold text-muted-foreground">/{attempt.scoreMax}</span>
         </div>
-        <div className="mt-0.5 flex items-center gap-2">
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${styles.pill}`}>
+        <div className="mt-0.5 flex items-center gap-1.5">
+          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${styles.pill}`}>
             {Math.round(pct)}%
           </span>
           {delta !== null && (
-            <span className={`inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums ${trendColor}`}>
-              <TrendIcon className="h-3 w-3" />
+            <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums ${trendColor}`}>
+              <TrendIcon className="h-2.5 w-2.5" />
               {delta > 0 ? `+${delta}` : delta}
             </span>
           )}
         </div>
       </div>
 
-      {/* Barre de progression */}
-      <div className="h-1.5 overflow-hidden rounded-full bg-muted/70">
-        <motion.div
-          className={`h-full rounded-full ${styles.bar}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.85, delay: 0.65 + index * 0.08, ease: "easeOut" }}
-        />
+      {/* Barre de progression — occupe l'espace restant */}
+      <div className="flex flex-1 flex-col gap-1">
+        <div className="h-2 overflow-hidden rounded-full bg-muted/70">
+          <motion.div
+            className={`h-full rounded-full ${styles.bar}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.85, delay: 0.6 + index * 0.07, ease: "easeOut" }}
+          />
+        </div>
       </div>
 
-      {/* Pied : questions faites */}
-      <div className="text-[11px] font-medium text-muted-foreground">
-        {attempt.done}/{attempt.total} questions
+      {/* Questions faites */}
+      <div className="shrink-0 text-right text-[11px] font-medium tabular-nums text-muted-foreground">
+        {attempt.done}/{attempt.total}
       </div>
     </motion.div>
   );
@@ -559,7 +557,7 @@ export default function SerieIVASPage() {
               {attempts.length} tentative{attempts.length > 1 ? "s" : ""}
             </span>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="flex flex-col gap-2">
             {attempts.map((a, i) => {
               const next    = attempts[i + 1];
               const prevPct = next ? pctOf(next) : null;
