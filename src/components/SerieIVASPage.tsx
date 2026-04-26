@@ -305,7 +305,7 @@ function StarDisplay({ avg }: { avg: number }) {
         {Array.from({ length: 10 }, (_, i) => (
           <Star
             key={i}
-            className={`h-[15px] w-[15px] transition-colors ${
+            className={`h-6 w-6 transition-colors ${
               i < filled
                 ? "text-amber-400 dark:text-amber-300"
                 : "text-border dark:text-border"
