@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 import SerieIVASPage from "@/components/SerieIVASPage";
+import QCMCartePage from "@/components/QCMCartePage";
 
 export default function Home() {
   const [isDark, setIsDark] = useState(false);
@@ -28,7 +29,19 @@ export default function Home() {
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
         </div>
+
         <SerieIVASPage />
+
+        {/* ── Séparateur ── */}
+        <div className="my-12 flex items-center gap-4">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            QCM à la carte
+          </span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        <QCMCartePage />
       </div>
     </div>
   );
