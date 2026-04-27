@@ -241,9 +241,9 @@ function InteractiveRatio({ cas, simples, delay = 0 }: { cas: number; simples: n
 }
 
 // ─────────────────────────────────────────────────────────
-// Ligne historique
+// Carte de tentative — layout horizontal compact
 // ─────────────────────────────────────────────────────────
-function HistoryRow({ attempt, index, prevPct }: { attempt: Attempt; index: number; prevPct: number | null }) {
+function AttemptCard({ attempt, index, prevPct }: { attempt: Attempt; index: number; prevPct: number | null }) {
   const pct    = (attempt.score / attempt.scoreMax) * 100;
   const styles = tierStyles[attempt.tier];
   const delta  = prevPct !== null ? Math.round(pct - prevPct) : null;
@@ -255,41 +255,56 @@ function HistoryRow({ attempt, index, prevPct }: { attempt: Attempt; index: numb
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35, delay: 0.55 + index * 0.08, ease: "easeOut" }}
-      className={`grid grid-cols-[44px_minmax(70px,1fr)_minmax(160px,2fr)_auto] items-center gap-3 rounded-xl px-2 py-2.5 transition-colors ${styles.row} hover:opacity-100`}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.55 + index * 0.07, ease: "easeOut" }}
+      className={`flex items-center gap-4 rounded-2xl px-4 py-3 ${styles.row}`}
     >
-      <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums ${styles.badge}`}>
-        #{attempt.num}
+      {/* Badge + date */}
+      <div className="flex shrink-0 items-center gap-2.5">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums ${styles.badge}`}>
+          #{attempt.num}
+        </div>
+        <span className="w-[62px] text-[11px] font-medium tabular-nums text-muted-foreground">
+          {attempt.date}
+        </span>
       </div>
-      <div>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">QCM faits</div>
-        <div className="font-bold tabular-nums text-foreground">{attempt.done}/{attempt.total}</div>
-      </div>
-      <div>
-        <div className="mb-1.5 flex items-center gap-2">
-          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums ${styles.pill}`}>
-            {attempt.score}/{attempt.scoreMax}
+
+      {/* Score + % + tendance */}
+      <div className="shrink-0 w-[100px]">
+        <div className="flex items-baseline gap-1">
+          <span className="text-xl font-bold tabular-nums text-foreground">{attempt.score}</span>
+          <span className="text-sm font-semibold text-muted-foreground">/{attempt.scoreMax}</span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1.5">
+          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${styles.pill}`}>
+            {Math.round(pct)}%
           </span>
-          <span className="text-xs font-semibold tabular-nums text-muted-foreground">{Math.round(pct)}%</span>
           {delta !== null && (
-            <span className={`ml-auto inline-flex items-center gap-0.5 text-[11px] font-bold tabular-nums ${trendColor}`}>
-              <TrendIcon className="h-3 w-3" />
+            <span className={`inline-flex items-center gap-0.5 text-[10px] font-bold tabular-nums ${trendColor}`}>
+              <TrendIcon className="h-2.5 w-2.5" />
               {delta > 0 ? `+${delta}` : delta}
             </span>
           )}
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+      </div>
+
+      {/* Barre de progression — occupe l'espace restant */}
+      <div className="flex flex-1 flex-col gap-1">
+        <div className="h-2 overflow-hidden rounded-full bg-muted/70">
           <motion.div
             className={`h-full rounded-full ${styles.bar}`}
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.85, delay: 0.65 + index * 0.08, ease: "easeOut" }}
+            transition={{ duration: 0.85, delay: 0.6 + index * 0.07, ease: "easeOut" }}
           />
         </div>
       </div>
-      <div className="text-right text-xs font-medium tabular-nums text-muted-foreground">{attempt.date}</div>
+
+      {/* Questions faites */}
+      <div className="shrink-0 text-right text-[11px] font-medium tabular-nums text-muted-foreground">
+        {attempt.done}/{attempt.total}
+      </div>
     </motion.div>
   );
 }
@@ -542,11 +557,11 @@ export default function SerieIVASPage() {
               {attempts.length} tentative{attempts.length > 1 ? "s" : ""}
             </span>
           </div>
-          <div className="space-y-1">
+          <div className="flex flex-col gap-2">
             {attempts.map((a, i) => {
               const next    = attempts[i + 1];
               const prevPct = next ? pctOf(next) : null;
-              return <HistoryRow key={a.num} attempt={a} index={i} prevPct={prevPct} />;
+              return <AttemptCard key={a.num} attempt={a} index={i} prevPct={prevPct} />;
             })}
           </div>
         </CardContent>
