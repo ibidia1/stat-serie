@@ -229,15 +229,16 @@ export default function ResultatsExamenPage() {
       </div>
 
       {/* ── Cartes par spécialité ───────────────────────── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-stretch">
+      <div className="columns-1 gap-4 lg:columns-2">
         {specEntries.map((entry, i) => (
-          <SpecialiteCard
-            key={entry.spec}
-            specialite={entry.spec}
-            stats={{ correct: entry.correct, partial: entry.partial, wrong: entry.wrong, total: entry.total, note: entry.note }}
-            sujets={entry.sujets}
-            index={i}
-          />
+          <div key={entry.spec} className="mb-4 break-inside-avoid">
+            <SpecialiteCard
+              specialite={entry.spec}
+              stats={{ correct: entry.correct, partial: entry.partial, wrong: entry.wrong, total: entry.total, note: entry.note }}
+              sujets={entry.sujets}
+              index={i}
+            />
+          </div>
         ))}
       </div>
     </div>
