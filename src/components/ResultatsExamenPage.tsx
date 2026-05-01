@@ -70,26 +70,27 @@ function KpiCard({
   title: string; name: string; note: number; variant: "up" | "down";
 }) {
   const isUp = variant === "up";
-  const tint = isUp
-    ? "border-emerald-200/60 bg-emerald-50/70 dark:border-emerald-900/50 dark:bg-emerald-950/30"
-    : "border-red-200/60 bg-red-50/70 dark:border-red-900/50 dark:bg-red-950/30";
-  const accentText = isUp ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300";
-  const valueText  = isUp ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400";
+  const cardClass = isUp
+    ? "bg-gradient-to-br from-emerald-500/10 to-transparent border-emerald-500/30"
+    : "bg-gradient-to-br from-red-500/10 to-transparent border-red-500/30";
+  const accentText = isUp ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400";
   return (
-    <Card className={`${tint}`}>
-      <CardContent className="p-3">
-        <div className="mb-2 flex items-center gap-1.5">
-          {isUp
-            ? <TrendingUp className={`h-3.5 w-3.5 ${accentText}`} />
-            : <TrendingDown className={`h-3.5 w-3.5 ${accentText}`} />}
-          <span className={`text-[11px] font-semibold ${accentText}`}>{title}</span>
-        </div>
-        <p className="mb-1 truncate text-xs font-semibold text-foreground" title={name}>{name || "—"}</p>
-        <p className={`text-xl font-bold tabular-nums ${valueText}`}>
-          {note.toFixed(1)}<span className="text-xs font-semibold">/20</span>
-        </p>
-      </CardContent>
-    </Card>
+    <motion.div whileHover={{ scale: 1.005 }} transition={{ type: "spring", stiffness: 300 }}>
+      <Card className={`${cardClass} relative overflow-hidden`}>
+        <CardContent className="p-3 sm:p-4">
+          <div className="mb-1.5 flex items-center gap-2 sm:mb-2">
+            {isUp
+              ? <TrendingUp className={accentText} size={16} />
+              : <TrendingDown className={accentText} size={16} />}
+            <span className="text-xs text-muted-foreground sm:text-sm">{title}</span>
+          </div>
+          <p className="mb-0.5 truncate text-xs text-foreground sm:text-sm" title={name}>{name || "—"}</p>
+          <p className={`text-lg font-semibold tabular-nums sm:text-xl ${accentText}`}>
+            {note.toFixed(1)}/20
+          </p>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
