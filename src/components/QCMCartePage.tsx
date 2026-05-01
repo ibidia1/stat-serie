@@ -190,7 +190,7 @@ function PillGrid({
 }) {
   const [expanded, setExpanded] = useState(false);
   const visible = expanded ? items : items.slice(0, limit);
-  const colsClass = cols === 2 ? "grid-cols-2" : cols === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3";
+  const colsClass = cols === 2 ? "grid-cols-2" : cols === 4 ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-2 sm:grid-cols-3";
   return (
     <div>
       <div className={`grid gap-1.5 ${colsClass}`}>
@@ -470,7 +470,7 @@ export default function QCMCartePage() {
               {/* Spécialité */}
               <FilterSection title={`Spécialité${epreuves.length > 0 ? ` · ${visibleSpecialites.length}` : ""}`} defaultOpen={false}>
                 {visibleSpecialites.length > 0 ? (
-                  <PillGrid items={visibleSpecialites} selected={specialites} onToggle={(v) => setSpecialites((prev) => toggle(prev, v))} limit={12} />
+                  <PillGrid items={visibleSpecialites} selected={specialites} onToggle={(v) => setSpecialites((prev) => toggle(prev, v))} limit={12} cols={4} />
                 ) : (
                   <p className="text-xs text-muted-foreground">Aucune spécialité pour cette épreuve.</p>
                 )}
@@ -479,7 +479,7 @@ export default function QCMCartePage() {
               {/* Sujet */}
               <FilterSection title={`Sujet · ${visibleSujets.length}`} defaultOpen={false}>
                 {visibleSujets.length > 0 ? (
-                  <PillGrid items={visibleSujets} selected={sujets} onToggle={(v) => setSujets((prev) => toggle(prev, v))} limit={16} />
+                  <PillGrid items={visibleSujets} selected={sujets} onToggle={(v) => setSujets((prev) => toggle(prev, v))} limit={16} cols={4} />
                 ) : (
                   <p className="text-xs text-muted-foreground">Aucun sujet pour la sélection actuelle.</p>
                 )}
