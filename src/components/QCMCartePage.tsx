@@ -427,35 +427,31 @@ export default function QCMCartePage() {
                   const isFaitGroup  = statuts.some((s) => s === "Fait" || (FAIT_SUBS as readonly string[]).includes(s));
                   const toggleFait   = (label: string) => setStatuts((v) => toggle(v.filter((s) => s !== "Non fait"), label));
                   return (
-                    <div className="space-y-1.5">
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5">
+                      <FilterPill
+                        label="Non fait"
+                        selected={isNonFait}
+                        disabled={isFaitGroup}
+                        activeClass={STATUT_ACTIVE["Non fait"]}
+                        onClick={() => setStatuts(isNonFait ? [] : ["Non fait"])}
+                      />
+                      {FAIT_SUBS.map((label) => (
                         <FilterPill
-                          label="Non fait"
-                          selected={isNonFait}
-                          disabled={isFaitGroup}
-                          activeClass={STATUT_ACTIVE["Non fait"]}
-                          onClick={() => setStatuts(isNonFait ? [] : ["Non fait"])}
-                        />
-                        <FilterPill
-                          label="Fait"
-                          selected={statuts.includes("Fait")}
+                          key={label}
+                          label={label}
+                          selected={statuts.includes(label)}
                           disabled={isNonFait}
-                          activeClass={STATUT_ACTIVE["Fait"]}
-                          onClick={() => toggleFait("Fait")}
+                          activeClass={STATUT_ACTIVE[label]}
+                          onClick={() => toggleFait(label)}
                         />
-                      </div>
-                      <div className="ml-3 flex flex-wrap gap-1.5">
-                        {FAIT_SUBS.map((label) => (
-                          <FilterPill
-                            key={label}
-                            label={label}
-                            selected={statuts.includes(label)}
-                            disabled={isNonFait}
-                            activeClass={STATUT_ACTIVE[label]}
-                            onClick={() => toggleFait(label)}
-                          />
-                        ))}
-                      </div>
+                      ))}
+                      <FilterPill
+                        label="Fait"
+                        selected={statuts.includes("Fait")}
+                        disabled={isNonFait}
+                        activeClass={STATUT_ACTIVE["Fait"]}
+                        onClick={() => toggleFait("Fait")}
+                      />
                     </div>
                   );
                 })()}
