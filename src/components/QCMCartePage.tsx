@@ -351,6 +351,7 @@ export default function QCMCartePage() {
     { label: "Spécialité",  value: specialites.length ? `${specialites.length} sélectionnée(s)` : "Toutes" },
     { label: "Sujet",       value: sujets.length    ? `${sujets.length} sélectionné(s)` : "Tous" },
     { label: "Faculté",     value: facultes.length  ? facultes.join(", ")   : "Toutes" },
+    { label: "Tags",        value: tags.length      ? tags.join(", ")       : "Tous" },
     { label: "Type",        value: types.length     ? types.join(", ")      : "Tous" },
   ];
 
