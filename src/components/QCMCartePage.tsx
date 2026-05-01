@@ -374,7 +374,7 @@ export default function QCMCartePage() {
       </motion.div>
 
       {/* ── Corps : filtres (2/3) + résumé/séries (1/3) ─── */}
-      <div className="grid grid-cols-[2fr_1fr] gap-4 items-start">
+      <div className="grid grid-cols-1 gap-4 items-start lg:grid-cols-[2fr_1fr]">
 
         {/* ── Filtres ─────────────────────────────────────── */}
         <motion.div
