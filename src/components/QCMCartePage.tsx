@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search, RotateCcw, Bookmark, Play, Trash2,
@@ -14,35 +14,63 @@ import { Button } from "./ui/button";
 // ─────────────────────────────────────────────────────────
 type Source = "series" | "exams";
 
-const SPECIALITES = [
-  "Cardiologie – CCVT", "Chirurgie générale", "Endocrinologie", "Gastro-entérologie",
-  "Gynécologie – Obstétrique", "Hématologie", "Infectiologie", "Médecine Interne",
-  "Neurologie", "Néphrologie", "ORL", "Ophtalmologie",
-  "Orthopédie – Rhumatologie", "Pneumologie – Allergologie", "Psychiatrie", "Pédiatrie",
-  "Réanimation", "Urologie",
-];
+// ─────────────────────────────────────────────────────────
+// Spécialité → Jour (J1/J2)
+// ─────────────────────────────────────────────────────────
+const SPECIALITE_JOUR: Record<string, "J1" | "J2"> = {
+  // Jour 1
+  "Neurologie":                "J1",
+  "Psychiatrie":               "J1",
+  "Ophtalmologie":             "J1",
+  "ORL":                       "J1",
+  "Pneumologie – Allergologie": "J1",
+  "Cardiologie – CCVT":        "J1",
+  "Gastro-entérologie":        "J1",
+  "Chirurgie générale":        "J1",
+  "Gynécologie – Obstétrique": "J1",
+  // Jour 2
+  "Urologie":                  "J2",
+  "Néphrologie":               "J2",
+  "Réanimation":               "J2",
+  "Endocrinologie":            "J2",
+  "Médecine Interne":          "J2",
+  "Infectiologie":             "J2",
+  "Hématologie":               "J2",
+  "Orthopédie – Rhumatologie": "J2",
+  "Pédiatrie":                 "J2",
+};
 
-const SUJETS = [
-  "AVC", "Adénopathies superficielles", "Anémie", "Appendicite aiguë",
-  "Arrêt cardio-circulatoire", "Arthrite septique", "Asthme", "BPCO",
-  "Bronchiolite", "Brûlures cutanées", "CBP", "Cancer colorectal",
-  "Cancer du cavum", "Cancer du col", "Cancer du sein", "Comas",
-  "Contraception", "Céphalées", "Diabète sucré", "Diarrhées chroniques",
-  "Déshydratation aiguë de l'enfant", "Douleur thoracique", "Dyskaliémies", "Dyslipidémies",
-  "Dysphagies", "Endocardite infectieuse", "Fractures ouvertes de la jambe", "Grossesse extra-utérine",
-  "HTA", "Hypercalcémies", "Hyperthyroïdie", "Hypothyroïdie",
-  "Hématuries", "Hémorragies digestives", "Hépatites virales", "IST",
-  "IVAS", "Ictères", "Infections respiratoires basses", "Infections urinaires",
-  "Insuffisance rénale aiguë", "Insuffisance surrénalienne aiguë", "Intoxication", "Ischémie des membres",
-  "Lithiase urinaire", "MVTE", "Méningite", "Métrorragies",
-  "Occlusion intestinale aiguë", "Polyarthrite rhumatoïde", "Polytraumatisme", "Prise en charge d'une douleur aiguë",
-  "Prééclampsie – éclampsie", "Purpura", "Péritonite aiguë", "SCA",
-  "Schizophrénie", "Splénomégalies", "Transfusion sanguine", "Traumatisme crânien",
-  "Troubles acido-basiques", "Troubles anxieux", "Troubles de l'humeur", "Troubles de l'hydratation",
-  "Tuberculose pulmonaire", "Tumeurs de la prostate", "Ulcère gastro-duodénal", "Vaccinations",
-  "Épilepsies", "État de choc cardiogénique", "État de choc hémorragique", "États confusionnels",
-  "États septiques graves", "Œdèmes", "Œil rouge",
-];
+// ─────────────────────────────────────────────────────────
+// Spécialité → Sujets
+// ─────────────────────────────────────────────────────────
+const SPECIALITE_SUJETS: Record<string, string[]> = {
+  // J1
+  "Neurologie":                ["AVC", "Céphalées", "Épilepsies"],
+  "Psychiatrie":               ["États confusionnels", "Schizophrénie", "Troubles de l'humeur", "Troubles anxieux"],
+  "Ophtalmologie":             ["Œil rouge"],
+  "ORL":                       ["IVAS", "Cancer du cavum"],
+  "Pneumologie – Allergologie": ["CBP", "Infections respiratoires basses", "Tuberculose pulmonaire", "Asthme", "BPCO"],
+  "Cardiologie – CCVT":        ["SCA", "Douleur thoracique", "HTA", "Endocardite infectieuse", "Ischémie des membres", "MVTE"],
+  "Gastro-entérologie":        ["Dysphagies", "Ictères", "Diarrhées chroniques", "Ulcère gastro-duodénal", "Hémorragies digestives"],
+  "Chirurgie générale":        ["Péritonite aiguë", "Appendicite aiguë", "Cancer colorectal", "Occlusion intestinale aiguë"],
+  "Gynécologie – Obstétrique": ["Cancer du col", "Cancer du sein", "Contraception", "Grossesse extra-utérine", "Prééclampsie – éclampsie", "Métrorragies"],
+  // J2
+  "Urologie":                  ["Tumeurs de la prostate", "Lithiase urinaire", "Hématuries", "Infections urinaires"],
+  "Néphrologie":               ["Troubles acido-basiques", "Dyskaliémies", "Troubles de l'hydratation", "Œdèmes", "Insuffisance rénale aiguë"],
+  "Réanimation":               ["Intoxication", "Polytraumatisme", "État de choc hémorragique", "État de choc cardiogénique", "États septiques graves", "Arrêt cardio-circulatoire", "Brûlures cutanées", "Traumatisme crânien", "Comas", "Prise en charge d'une douleur aiguë"],
+  "Endocrinologie":            ["Insuffisance surrénalienne aiguë", "Hyperthyroïdie", "Hypothyroïdie", "Dyslipidémies", "Diabète sucré"],
+  "Médecine Interne":          ["Hypercalcémies", "Purpura"],
+  "Infectiologie":             ["Méningite", "IST", "Hépatites virales"],
+  "Hématologie":               ["Splénomégalies", "Adénopathies superficielles", "Anémie", "Transfusion sanguine"],
+  "Orthopédie – Rhumatologie": ["Arthrite septique", "Fractures ouvertes de la jambe", "Polyarthrite rhumatoïde"],
+  "Pédiatrie":                 ["Bronchiolite", "Déshydratation aiguë de l'enfant", "Vaccinations"],
+};
+
+const SPECIALITES = Object.keys(SPECIALITE_JOUR).sort((a, b) => a.localeCompare(b, "fr"));
+const SUJETS      = Object.values(SPECIALITE_SUJETS).flat().sort((a, b) => a.localeCompare(b, "fr"));
+const SUJET_SPECIALITE: Record<string, string> = Object.fromEntries(
+  Object.entries(SPECIALITE_SUJETS).flatMap(([spec, sujs]) => sujs.map((s) => [s, spec])),
+);
 
 const STATUTS = [
   { label: "Non fait",  color: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",    active: "bg-slate-500 text-white" },
@@ -241,6 +269,32 @@ export default function QCMCartePage() {
   const [configs,    setConfigs]    = useState<SavedConfig[]>(MOCK_CONFIGS);
   const [search,     setSearch]     = useState("");
 
+  // Spécialités visibles selon les épreuves
+  const visibleSpecialites = useMemo(() => {
+    if (epreuves.length === 0) return SPECIALITES;
+    return SPECIALITES.filter((s) => epreuves.includes(SPECIALITE_JOUR[s]));
+  }, [epreuves]);
+
+  // Sujets visibles selon épreuves + spécialités
+  const visibleSujets = useMemo(() => {
+    return SUJETS.filter((sujet) => {
+      const spec = SUJET_SPECIALITE[sujet];
+      if (!spec) return true;
+      if (epreuves.length > 0 && !epreuves.includes(SPECIALITE_JOUR[spec])) return false;
+      if (specialites.length > 0 && !specialites.includes(spec)) return false;
+      return true;
+    });
+  }, [epreuves, specialites]);
+
+  // Nettoyer les sélections devenues invalides
+  useEffect(() => {
+    setSpecialites((prev) => prev.filter((s) => visibleSpecialites.includes(s)));
+  }, [visibleSpecialites]);
+
+  useEffect(() => {
+    setSujets((prev) => prev.filter((s) => visibleSujets.includes(s)));
+  }, [visibleSujets]);
+
   const filteredSeries = series.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -389,13 +443,21 @@ export default function QCMCartePage() {
               </FilterSection>
 
               {/* Spécialité */}
-              <FilterSection title="Spécialité" defaultOpen={false}>
-                <PillGrid items={SPECIALITES} selected={specialites} onToggle={(v) => setSpecialites((prev) => toggle(prev, v))} limit={12} />
+              <FilterSection title={`Spécialité${epreuves.length > 0 ? ` · ${visibleSpecialites.length}` : ""}`} defaultOpen={false}>
+                {visibleSpecialites.length > 0 ? (
+                  <PillGrid items={visibleSpecialites} selected={specialites} onToggle={(v) => setSpecialites((prev) => toggle(prev, v))} limit={12} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">Aucune spécialité pour cette épreuve.</p>
+                )}
               </FilterSection>
 
               {/* Sujet */}
-              <FilterSection title="Sujet" defaultOpen={false}>
-                <PillGrid items={SUJETS} selected={sujets} onToggle={(v) => setSujets((prev) => toggle(prev, v))} limit={16} />
+              <FilterSection title={`Sujet · ${visibleSujets.length}`} defaultOpen={false}>
+                {visibleSujets.length > 0 ? (
+                  <PillGrid items={visibleSujets} selected={sujets} onToggle={(v) => setSujets((prev) => toggle(prev, v))} limit={16} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">Aucun sujet pour la sélection actuelle.</p>
+                )}
               </FilterSection>
 
               {/* Année */}
