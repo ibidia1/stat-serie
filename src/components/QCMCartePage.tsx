@@ -73,11 +73,18 @@ const SUJET_SPECIALITE: Record<string, string> = Object.fromEntries(
 );
 
 const FAIT_SUBS = ["Réussi", "Incomplet", "Faux"] as const;
+const STATUT_ACTIVE: Record<string, string> = {
+  "Non fait":  "bg-slate-500 text-white",
+  "Fait":      "bg-blue-500 text-white",
+  "Réussi":    "bg-emerald-500 text-white",
+  "Incomplet": "bg-orange-500 text-white",
+  "Faux":      "bg-red-500 text-white",
+};
 
 const ANNEES   = ["2025", "2024"];
 const FACULTES = ["FMM", "FMS", "FMSF"];
 const EPREUVES = ["J1", "J2"];
-const TAGS     = ["Biologie", "Clinique", "Physiologie", "faculty:FMS", "faculty:FMT", "year:2024", "year:2025"];
+const TAGS     = ["Anatomie", "Physiologie", "Pharmacologie", "Clinique", "Biologie", "Épidémiologie"];
 const TYPES    = ["Cas clinique", "QCM"];
 
 type SavedSerie  = {
@@ -192,7 +199,7 @@ function PillGrid({
             key={item}
             onClick={() => onToggle(item)}
             title={item}
-            className={`truncate rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-all ${
+            className={`truncate rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition-all ${
               selected.includes(item)
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
@@ -426,12 +433,14 @@ export default function QCMCartePage() {
                           label="Non fait"
                           selected={isNonFait}
                           disabled={isFaitGroup}
+                          activeClass={STATUT_ACTIVE["Non fait"]}
                           onClick={() => setStatuts(isNonFait ? [] : ["Non fait"])}
                         />
                         <FilterPill
                           label="Fait"
                           selected={statuts.includes("Fait")}
                           disabled={isNonFait}
+                          activeClass={STATUT_ACTIVE["Fait"]}
                           onClick={() => toggleFait("Fait")}
                         />
                       </div>
@@ -442,6 +451,7 @@ export default function QCMCartePage() {
                             label={label}
                             selected={statuts.includes(label)}
                             disabled={isNonFait}
+                            activeClass={STATUT_ACTIVE[label]}
                             onClick={() => toggleFait(label)}
                           />
                         ))}
