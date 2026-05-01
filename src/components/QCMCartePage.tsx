@@ -503,6 +503,15 @@ export default function QCMCartePage() {
                 </div>
               </FilterSection>
 
+              {/* Tags */}
+              <FilterSection title="Tags" defaultOpen={false}>
+                <div className="flex flex-wrap gap-1.5">
+                  {TAGS.map((t) => (
+                    <FilterPill key={t} label={t} selected={tags.includes(t)} onClick={() => setTags((v) => toggle(v, t))} />
+                  ))}
+                </div>
+              </FilterSection>
+
               {/* Type de question */}
               <FilterSection title="Type de question">
                 <div className="flex gap-1.5">
