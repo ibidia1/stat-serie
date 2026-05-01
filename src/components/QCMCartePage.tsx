@@ -82,7 +82,7 @@ const STATUT_ACTIVE: Record<string, string> = {
 };
 
 const ANNEES   = ["2025", "2024"];
-const FACULTES = ["FMM", "FMS", "FMSF"];
+const FACULTES = ["FMM", "FMS", "FMSF", "FMT"];
 const EPREUVES = ["J1", "J2"];
 const TAGS     = ["Anatomie", "Physiologie", "Pharmacologie", "Clinique", "Biologie", "Épidémiologie"];
 const TYPES    = ["Cas clinique", "QCM"];
