@@ -58,13 +58,18 @@ const EPREUVES = ["J1", "J2"];
 const TAGS     = ["Biologie", "Clinique", "Physiologie", "faculty:FMS", "faculty:FMT", "year:2024", "year:2025"];
 const TYPES    = ["Cas clinique", "QCM"];
 
-type SavedSerie = { id: string; name: string; questions: number; done: number; date: string; source: Source };
+type SavedSerie  = { id: string; name: string; questions: number; done: number; date: string; source: Source };
+type SavedConfig = { id: string; name: string };
 
 const MOCK_SERIES: SavedSerie[] = [
   { id: "1", name: "Transfusion sanguine",    questions: 2,  done: 2,  date: "27/04", source: "exams"  },
   { id: "2", name: "Neurologie, Réanimation", questions: 30, done: 15, date: "26/04", source: "series" },
   { id: "3", name: "Série personnalisée",     questions: 30, done: 0,  date: "25/04", source: "series" },
   { id: "4", name: "Cardiologie avancée",     questions: 25, done: 8,  date: "24/04", source: "exams"  },
+];
+
+const MOCK_CONFIGS: SavedConfig[] = [
+  { id: "1", name: "fc" },
 ];
 
 // ─────────────────────────────────────────────────────────
@@ -233,6 +238,7 @@ export default function QCMCartePage() {
   const [tags,       setTags]       = useState<string[]>([]);
   const [types,      setTypes]      = useState<string[]>([]);
   const [series,     setSeries]     = useState(MOCK_SERIES);
+  const [configs,    setConfigs]    = useState<SavedConfig[]>(MOCK_CONFIGS);
   const [search,     setSearch]     = useState("");
 
   const filteredSeries = series.filter((s) =>
@@ -481,11 +487,12 @@ export default function QCMCartePage() {
             <Card>
               <CardContent className="p-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-sm font-bold text-foreground">Mes séries</p>
+                  <p className="text-sm font-bold text-foreground">Mes séries personnalisées</p>
                   <span className="text-[11px] text-muted-foreground">
                     {filteredSeries.length} série{filteredSeries.length > 1 ? "s" : ""}
                   </span>
                 </div>
+                <p className="mb-3 text-[11px] text-muted-foreground">Séries que vous avez générées avec vos filtres</p>
                 <div className="space-y-0.5">
                   <AnimatePresence>
                     {filteredSeries.length > 0 ? (
@@ -493,7 +500,71 @@ export default function QCMCartePage() {
                         <SerieRow key={s.id} serie={s} index={i} onDelete={(id) => setSeries((p) => p.filter((x) => x.id !== id))} />
                       ))
                     ) : (
-                      <p className="py-4 text-center text-xs text-muted-foreground">Aucune série</p>
+                      <p className="py-4 text-center text-xs text-muted-foreground">
+                        Aucune série personnalisée. Utilisez les filtres ci-dessus pour en créer une !
+                      </p>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Mes configurations de filtres */}
+          <motion.div
+            initial={{ opacity: 0, x: 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.24, ease: "easeOut" }}
+          >
+            <Card>
+              <CardContent className="p-4">
+                <div className="mb-1 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-foreground">Mes configurations de filtres</p>
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                      {configs.length}
+                    </span>
+                  </div>
+                  {configs.length > 0 && (
+                    <button
+                      onClick={() => setConfigs([])}
+                      className="text-[11px] font-semibold text-muted-foreground transition-colors hover:text-red-500"
+                    >
+                      Tout supprimer
+                    </button>
+                  )}
+                </div>
+                <p className="mb-3 text-[11px] text-muted-foreground">
+                  Configurations de filtres sauvegardées pour un accès rapide
+                </p>
+                <div className="space-y-1.5">
+                  <AnimatePresence>
+                    {configs.length > 0 ? (
+                      configs.map((c, i) => (
+                        <motion.div
+                          key={c.id}
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                          transition={{ duration: 0.2, delay: i * 0.04 }}
+                          className="flex items-center justify-between rounded-xl border border-border px-3 py-2.5 transition-colors hover:bg-muted/50"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bookmark className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-sm font-semibold text-foreground">{c.name}</span>
+                          </div>
+                          <button
+                            onClick={() => setConfigs((p) => p.filter((x) => x.id !== c.id))}
+                            className="rounded-lg p-1 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950/30"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </motion.div>
+                      ))
+                    ) : (
+                      <p className="py-3 text-center text-xs text-muted-foreground">
+                        Aucune configuration sauvegardée
+                      </p>
                     )}
                   </AnimatePresence>
                 </div>
