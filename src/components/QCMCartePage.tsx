@@ -72,13 +72,7 @@ const SUJET_SPECIALITE: Record<string, string> = Object.fromEntries(
   Object.entries(SPECIALITE_SUJETS).flatMap(([spec, sujs]) => sujs.map((s) => [s, spec])),
 );
 
-const STATUTS = [
-  { label: "Non fait",  color: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",    active: "bg-slate-500 text-white" },
-  { label: "Fait",      color: "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400",       active: "bg-blue-500 text-white" },
-  { label: "Réussi",   color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400", active: "bg-emerald-500 text-white" },
-  { label: "Incomplet", color: "bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400", active: "bg-orange-500 text-white" },
-  { label: "Faux",      color: "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400",            active: "bg-red-500 text-white" },
-];
+const STATUTS = ["Non fait", "Fait", "Réussi", "Incomplet", "Faux"];
 
 const ANNEES   = ["2025", "2024"];
 const FACULTES = ["FMM", "FMS", "FMSF"];
@@ -419,16 +413,8 @@ export default function QCMCartePage() {
               {/* Statut */}
               <FilterSection title="Statut">
                 <div className="flex flex-wrap gap-1.5">
-                  {STATUTS.map(({ label, color, active }) => (
-                    <button
-                      key={label}
-                      onClick={() => setStatuts((v) => toggle(v, label))}
-                      className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
-                        statuts.includes(label) ? active : color
-                      }`}
-                    >
-                      {label}
-                    </button>
+                  {STATUTS.map((label) => (
+                    <FilterPill key={label} label={label} selected={statuts.includes(label)} onClick={() => setStatuts((v) => toggle(v, label))} />
                   ))}
                 </div>
               </FilterSection>
