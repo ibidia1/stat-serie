@@ -106,9 +106,9 @@ function SpecialiteCard({
   index: number;
 }) {
   const donutData = [
-    { name: "Correct", value: stats.correct, color: "#10b981" },
-    { name: "Partiel", value: stats.partial, color: "#f59e0b" },
-    { name: "Faux",    value: stats.wrong,   color: "#ef4444" },
+    { name: "Correct", value: stats.correct, color: "#059669" },
+    { name: "Partiel", value: stats.partial, color: "#ff8f00" },
+    { name: "Faux",    value: stats.wrong,   color: "#dc2626" },
   ].filter((d) => d.value > 0);
 
   const noteColor =
@@ -173,9 +173,9 @@ function SpecialiteCard({
                       <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{total} q</span>
                     </div>
                     <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
-                      <motion.div className="h-full bg-emerald-500 dark:bg-emerald-400" initial={{ width: 0 }} animate={{ width: `${pctC}%` }} transition={{ duration: 0.6, delay: 0.1 + index * 0.05, ease: "easeOut" }} />
-                      <motion.div className="h-full bg-amber-400 dark:bg-amber-300"     initial={{ width: 0 }} animate={{ width: `${pctP}%` }} transition={{ duration: 0.6, delay: 0.15 + index * 0.05, ease: "easeOut" }} />
-                      <motion.div className="h-full bg-red-500 dark:bg-red-400"         initial={{ width: 0 }} animate={{ width: `${pctW}%` }} transition={{ duration: 0.6, delay: 0.20 + index * 0.05, ease: "easeOut" }} />
+                      <motion.div className="h-full bg-[#059669]" initial={{ width: 0 }} animate={{ width: `${pctC}%` }} transition={{ duration: 0.6, delay: 0.1 + index * 0.05, ease: "easeOut" }} />
+                      <motion.div className="h-full bg-[#ff8f00]" initial={{ width: 0 }} animate={{ width: `${pctP}%` }} transition={{ duration: 0.6, delay: 0.15 + index * 0.05, ease: "easeOut" }} />
+                      <motion.div className="h-full bg-[#dc2626]" initial={{ width: 0 }} animate={{ width: `${pctW}%` }} transition={{ duration: 0.6, delay: 0.20 + index * 0.05, ease: "easeOut" }} />
                     </div>
                   </div>
                 );

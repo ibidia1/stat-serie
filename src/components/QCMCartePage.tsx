@@ -276,9 +276,9 @@ function SerieRow({ serie, index, onDelete }: { serie: SavedSerie; index: number
 
         {/* Barre tri-couleur */}
         <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
-          <motion.div className="h-full bg-emerald-500 dark:bg-emerald-400" initial={{ width: 0 }} animate={{ width: `${pctC}%` }} transition={{ duration: 0.6, delay: 0.15 + index * 0.05, ease: "easeOut" }} />
-          <motion.div className="h-full bg-amber-400 dark:bg-amber-300"     initial={{ width: 0 }} animate={{ width: `${pctP}%` }} transition={{ duration: 0.6, delay: 0.20 + index * 0.05, ease: "easeOut" }} />
-          <motion.div className="h-full bg-red-500 dark:bg-red-400"         initial={{ width: 0 }} animate={{ width: `${pctW}%` }} transition={{ duration: 0.6, delay: 0.25 + index * 0.05, ease: "easeOut" }} />
+          <motion.div className="h-full bg-[#059669]" initial={{ width: 0 }} animate={{ width: `${pctC}%` }} transition={{ duration: 0.6, delay: 0.15 + index * 0.05, ease: "easeOut" }} />
+          <motion.div className="h-full bg-[#ff8f00]" initial={{ width: 0 }} animate={{ width: `${pctP}%` }} transition={{ duration: 0.6, delay: 0.20 + index * 0.05, ease: "easeOut" }} />
+          <motion.div className="h-full bg-[#dc2626]" initial={{ width: 0 }} animate={{ width: `${pctW}%` }} transition={{ duration: 0.6, delay: 0.25 + index * 0.05, ease: "easeOut" }} />
         </div>
       </div>
 
