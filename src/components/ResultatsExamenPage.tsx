@@ -127,7 +127,7 @@ function SpecialiteCard({
           <div className="mb-3 flex items-center justify-between gap-2">
             <p className="truncate text-sm font-bold text-foreground" title={specialite}>{specialite}</p>
             <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-foreground">
-              {stats.total} q
+              {stats.total} qcm
             </span>
           </div>
 
@@ -170,7 +170,7 @@ function SpecialiteCard({
                   <div key={name}>
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <span className="truncate text-[11px] font-medium text-foreground" title={name}>{name}</span>
-                      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{total} q</span>
+                      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{total} qcm</span>
                     </div>
                     <div className="flex h-1.5 overflow-hidden rounded-full bg-muted">
                       <motion.div className="h-full bg-[#059669]" initial={{ width: 0 }} animate={{ width: `${pctC}%` }} transition={{ duration: 0.6, delay: 0.1 + index * 0.05, ease: "easeOut" }} />
