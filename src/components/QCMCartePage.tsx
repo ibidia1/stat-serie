@@ -203,10 +203,10 @@ function PillGrid({
             key={item}
             onClick={() => onToggle(item)}
             title={item}
-            className={`truncate rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition-all ${
+            className={`truncate rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition-all border ${
               selected.includes(item)
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+                ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                : "border-border bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground"
             }`}
           >
             {item}
