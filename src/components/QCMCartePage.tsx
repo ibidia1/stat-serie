@@ -100,10 +100,14 @@ type SavedSerie  = {
 type SavedConfig = { id: string; name: string };
 
 const MOCK_SERIES: SavedSerie[] = [
-  { id: "1", name: "Transfusion sanguine",     questions: 2,  correct: 2,  partial: 0, wrong: 0, date: "27/04/2026", source: "exams"  },
-  { id: "2", name: "Neurologie, Réanimation",  questions: 30, correct: 10, partial: 3, wrong: 5, date: "26/04/2026", source: "series" },
-  { id: "3", name: "Série personnalisée",      questions: 30, correct: 0,  partial: 0, wrong: 0, date: "25/04/2026", source: "series" },
-  { id: "4", name: "Cardiologie avancée",      questions: 25, correct: 5,  partial: 2, wrong: 1, date: "24/04/2026", source: "exams"  },
+  { id: "1",  name: "Transfusion sanguine",              questions: 20,  correct: 18, partial: 1,  wrong: 1,  date: "27/04/2026", source: "exams"  },
+  { id: "2",  name: "Neurologie, Réanimation",           questions: 30,  correct: 10, partial: 3,  wrong: 5,  date: "26/04/2026", source: "series" },
+  { id: "3",  name: "Cardiologie avancée",               questions: 25,  correct: 14, partial: 4,  wrong: 3,  date: "25/04/2026", source: "exams"  },
+  { id: "4",  name: "Infectiologie – IST & Méningite",   questions: 20,  correct: 8,  partial: 2,  wrong: 6,  date: "24/04/2026", source: "series" },
+  { id: "5",  name: "Pédiatrie complète",                questions: 30,  correct: 22, partial: 3,  wrong: 2,  date: "23/04/2026", source: "series" },
+  { id: "6",  name: "Endocrinologie – Diabète",          questions: 15,  correct: 0,  partial: 0,  wrong: 0,  date: "22/04/2026", source: "series" },
+  { id: "7",  name: "Hématologie – Anémie & Transfusion",questions: 20,  correct: 11, partial: 5,  wrong: 2,  date: "21/04/2026", source: "exams"  },
+  { id: "8",  name: "Pneumologie J1",                    questions: 25,  correct: 6,  partial: 1,  wrong: 10, date: "20/04/2026", source: "series" },
 ];
 
 const MOCK_CONFIGS: SavedConfig[] = [
@@ -227,7 +231,7 @@ function PillGrid({
 function SerieRow({ serie, index, onDelete }: { serie: SavedSerie; index: number; onDelete: (id: string) => void }) {
   const done     = serie.correct + serie.partial + serie.wrong;
   const finished = done >= serie.questions && serie.questions > 0;
-  const note     = serie.correct + serie.partial * 0.5;
+  const note     = serie.questions > 0 ? ((serie.correct + serie.partial * 0.5) / serie.questions) * 20 : 0;
   const pctC     = (serie.correct / serie.questions) * 100;
   const pctP     = (serie.partial / serie.questions) * 100;
   const pctW     = (serie.wrong   / serie.questions) * 100;
@@ -262,8 +266,8 @@ function SerieRow({ serie, index, onDelete }: { serie: SavedSerie; index: number
             {done > 0 && (
               <>
                 <span className="text-muted-foreground">·</span>
-                <span className="rounded-full bg-amber-50 px-1.5 py-0.5 font-bold text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
-                  Note {note.toFixed(1)}/{done}
+                <span className="font-bold text-amber-600 dark:text-amber-400">
+                  {note.toFixed(1)}/20
                 </span>
               </>
             )}
