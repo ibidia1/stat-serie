@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Moon, Sun } from "lucide-react";
 import SerieIVASPage from "@/components/SerieIVASPage";
 import QCMCartePage from "@/components/QCMCartePage";
+import ResultatsExamenPage from "@/components/ResultatsExamenPage";
 
 export default function Home() {
   const [isDark, setIsDark] = useState(false);
@@ -32,7 +33,7 @@ export default function Home() {
         <SerieIVASPage />
       </div>
 
-      {/* Séparateur pleine largeur */}
+      {/* Séparateur QCM à la carte */}
       <div className="my-12 flex items-center gap-4 px-8">
         <div className="h-px flex-1 bg-border" />
         <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -43,6 +44,19 @@ export default function Home() {
 
       <div className="mx-auto max-w-7xl px-4">
         <QCMCartePage />
+      </div>
+
+      {/* Séparateur Résultats détaillés examen */}
+      <div className="my-12 flex items-center gap-4 px-8">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Résultats détaillés examen
+        </span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4">
+        <ResultatsExamenPage />
       </div>
     </div>
   );
