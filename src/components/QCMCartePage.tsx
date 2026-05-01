@@ -81,7 +81,7 @@ const STATUT_ACTIVE: Record<string, string> = {
   "Faux":      "bg-red-500 text-white",
 };
 
-const ANNEES   = ["2025", "2024"];
+const ANNEES   = ["2025", "2024", "2023", "2022"];
 const FACULTES = ["FMM", "FMS", "FMSF", "FMT"];
 const EPREUVES = ["J1", "J2"];
 const TAGS     = ["Anatomie", "Physiologie", "Pharmacologie", "Clinique", "Biologie", "Épidémiologie"];
