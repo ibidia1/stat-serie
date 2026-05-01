@@ -378,7 +378,7 @@ export default function QCMCartePage() {
       </motion.div>
 
       {/* ── Corps : filtres (2/3) + résumé/séries (1/3) ─── */}
-      <div className="grid grid-cols-1 gap-4 items-start lg:grid-cols-[2fr_1fr]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr] lg:items-stretch">
 
         {/* ── Filtres ─────────────────────────────────────── */}
         <motion.div
@@ -554,7 +554,7 @@ export default function QCMCartePage() {
         </motion.div>
 
         {/* ── Résumé + séries ─────────────────────────────── */}
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
 
           {/* Config actuelle */}
           <motion.div
@@ -598,16 +598,17 @@ export default function QCMCartePage() {
             initial={{ opacity: 0, x: 8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.35, delay: 0.18, ease: "easeOut" }}
+            className="flex flex-1 flex-col min-h-0"
           >
-            <Card>
-              <CardContent className="p-4">
+            <Card className="flex flex-col flex-1 min-h-0">
+              <CardContent className="flex flex-col flex-1 min-h-0 p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-bold text-foreground">Mes séries personnalisées</p>
                   <span className="text-[11px] text-muted-foreground">
                     {series.length} série{series.length > 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="max-h-[272px] overflow-y-auto space-y-0.5 pr-1">
+                <div className="flex-1 min-h-0 overflow-y-auto space-y-0.5 pr-1">
                   <AnimatePresence>
                     {series.length > 0 ? (
                       series.map((s, i) => (
