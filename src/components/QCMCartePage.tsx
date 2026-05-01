@@ -72,7 +72,7 @@ const SUJET_SPECIALITE: Record<string, string> = Object.fromEntries(
   Object.entries(SPECIALITE_SUJETS).flatMap(([spec, sujs]) => sujs.map((s) => [s, spec])),
 );
 
-const STATUTS = ["Non fait", "Fait", "Réussi", "Incomplet", "Faux"];
+const FAIT_SUBS = ["Réussi", "Incomplet", "Faux"] as const;
 
 const ANNEES   = ["2025", "2024"];
 const FACULTES = ["FMM", "FMS", "FMSF"];
@@ -114,15 +114,18 @@ function toggle<T>(arr: T[], val: T): T[] {
 // Pill toggle button
 // ─────────────────────────────────────────────────────────
 function FilterPill({
-  label, selected, onClick, activeClass,
+  label, selected, onClick, activeClass, disabled = false,
 }: {
-  label: string; selected: boolean; onClick: () => void; activeClass?: string;
+  label: string; selected: boolean; onClick: () => void; activeClass?: string; disabled?: boolean;
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
-        selected
+        disabled
+          ? "cursor-not-allowed opacity-30 bg-muted text-muted-foreground"
+          : selected
           ? (activeClass ?? "bg-primary text-primary-foreground")
           : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
       }`}
@@ -412,11 +415,40 @@ export default function QCMCartePage() {
 
               {/* Statut */}
               <FilterSection title="Statut">
-                <div className="flex flex-wrap gap-1.5">
-                  {STATUTS.map((label) => (
-                    <FilterPill key={label} label={label} selected={statuts.includes(label)} onClick={() => setStatuts((v) => toggle(v, label))} />
-                  ))}
-                </div>
+                {(() => {
+                  const isNonFait    = statuts.includes("Non fait");
+                  const isFaitGroup  = statuts.some((s) => s === "Fait" || (FAIT_SUBS as readonly string[]).includes(s));
+                  const toggleFait   = (label: string) => setStatuts((v) => toggle(v.filter((s) => s !== "Non fait"), label));
+                  return (
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap gap-1.5">
+                        <FilterPill
+                          label="Non fait"
+                          selected={isNonFait}
+                          disabled={isFaitGroup}
+                          onClick={() => setStatuts(isNonFait ? [] : ["Non fait"])}
+                        />
+                        <FilterPill
+                          label="Fait"
+                          selected={statuts.includes("Fait")}
+                          disabled={isNonFait}
+                          onClick={() => toggleFait("Fait")}
+                        />
+                      </div>
+                      <div className="ml-3 flex flex-wrap gap-1.5">
+                        {FAIT_SUBS.map((label) => (
+                          <FilterPill
+                            key={label}
+                            label={label}
+                            selected={statuts.includes(label)}
+                            disabled={isNonFait}
+                            onClick={() => toggleFait(label)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </FilterSection>
 
               {/* Épreuve */}
