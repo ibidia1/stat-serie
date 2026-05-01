@@ -41,7 +41,7 @@ export default function Home() {
         <div className="h-px flex-1 bg-border" />
       </div>
 
-      <div className="mx-auto max-w-5xl px-4">
+      <div className="mx-auto max-w-7xl px-4">
         <QCMCartePage />
       </div>
     </div>
