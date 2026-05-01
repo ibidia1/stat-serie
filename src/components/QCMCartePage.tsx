@@ -436,6 +436,13 @@ export default function QCMCartePage() {
                         activeClass={STATUT_ACTIVE["Non fait"]}
                         onClick={() => setStatuts(isNonFait ? [] : ["Non fait"])}
                       />
+                      <FilterPill
+                        label="Fait"
+                        selected={statuts.includes("Fait")}
+                        disabled={isNonFait}
+                        activeClass={STATUT_ACTIVE["Fait"]}
+                        onClick={() => toggleFait("Fait")}
+                      />
                       {FAIT_SUBS.map((label) => (
                         <FilterPill
                           key={label}
@@ -446,13 +453,6 @@ export default function QCMCartePage() {
                           onClick={() => toggleFait(label)}
                         />
                       ))}
-                      <FilterPill
-                        label="Fait"
-                        selected={statuts.includes("Fait")}
-                        disabled={isNonFait}
-                        activeClass={STATUT_ACTIVE["Fait"]}
-                        onClick={() => toggleFait("Fait")}
-                      />
                     </div>
                   );
                 })()}
