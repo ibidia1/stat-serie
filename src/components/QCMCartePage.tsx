@@ -607,7 +607,7 @@ export default function QCMCartePage() {
                     {series.length} série{series.length > 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="max-h-[420px] overflow-y-auto space-y-0.5 pr-1">
+                <div className="max-h-[272px] overflow-y-auto space-y-0.5 pr-1">
                   <AnimatePresence>
                     {series.length > 0 ? (
                       series.map((s, i) => (
