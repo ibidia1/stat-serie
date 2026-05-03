@@ -36,7 +36,7 @@ export function DailyRitualEveningDialog({ open, onClose, events, onMarkSkipped 
 
         {/* Progress bar */}
         <div className="h-2 overflow-hidden rounded-full bg-muted">
-          <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full bg-success transition-all" style={{ width: `${pct}%` }} />
         </div>
         <p className="text-right text-[11px] tabular-nums text-muted-foreground">{pct}%</p>
 
@@ -88,7 +88,7 @@ export function DailyRitualEveningDialog({ open, onClose, events, onMarkSkipped 
                   onMouseEnter={() => setHover(n)}
                   className="rounded p-0.5 focus:outline-none"
                 >
-                  <Star className={`h-5 w-5 ${filled ? "fill-amber-400 text-amber-400" : "text-border"}`} />
+                  <Star className={`h-5 w-5 ${filled ? "fill-accent text-accent" : "text-border"}`} />
                 </button>
               );
             })}

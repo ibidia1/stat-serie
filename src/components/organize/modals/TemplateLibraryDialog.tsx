@@ -119,11 +119,11 @@ export function TemplateLibraryDialog({ open, onClose, onApply }: Props) {
             </button>
           ))
         ) : (
-          <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-800/60 dark:bg-orange-950/40">
-            <p className="text-sm font-semibold text-orange-700 dark:text-orange-400">
+          <div className="rounded-xl border border-accent/20 bg-accent/[0.06] p-4">
+            <p className="text-sm font-semibold text-accent">
               Confirmer l'application du template ?
             </p>
-            <p className="mt-1 text-xs text-orange-600 dark:text-orange-400/80">
+            <p className="mt-1 text-xs text-muted-foreground">
               Les nouveaux événements seront ajoutés à ton calendrier existant.
             </p>
           </div>
@@ -142,7 +142,7 @@ export function TemplateLibraryDialog({ open, onClose, onApply }: Props) {
             Appliquer ce plan
           </Button>
         ) : (
-          <Button onClick={handleApply} className="text-xs bg-orange-500 hover:bg-orange-600">
+          <Button onClick={handleApply} className="text-xs bg-accent hover:bg-accent/80 text-accent-foreground">
             Confirmer ✓
           </Button>
         )}

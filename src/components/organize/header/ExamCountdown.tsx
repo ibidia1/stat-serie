@@ -24,7 +24,7 @@ export function ExamCountdown({ examDate, onDateChange }: Props) {
         onClick={() => { setDraft(examDate); setEditing(true); }}
         className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums transition-colors ${
           urgent
-            ? "border-red-300 bg-red-50 text-red-700 dark:border-red-700/60 dark:bg-red-950/40 dark:text-red-400"
+            ? "border-destructive/30 bg-destructive/[0.08] text-destructive"
             : "border-primary/30 bg-primary/10 text-primary"
         }`}
       >

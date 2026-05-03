@@ -3,13 +3,26 @@
 /* ── Design tokens ─────────────────────────────────────── */
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
+  --foreground: #1e293b;
 
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #1e293b;
 
+  /* Bleu Médical */
   --primary: #4f7cff;
   --primary-foreground: #ffffff;
+
+  /* Vert ECG */
+  --success: #059669;
+  --success-foreground: #ffffff;
+
+  /* Orange Accent QE.tn */
+  --accent: #ff8f00;
+  --accent-foreground: #ffffff;
+
+  /* Rouge Médical */
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
 
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
@@ -25,8 +38,17 @@
   --card: #1e293b;
   --card-foreground: #f1f5f9;
 
-  --primary: #60a5fa;
+  --primary: #6b93ff;
   --primary-foreground: #0f172a;
+
+  --success: #10b981;
+  --success-foreground: #0f172a;
+
+  --accent: #ffab30;
+  --accent-foreground: #0f172a;
+
+  --destructive: #f87171;
+  --destructive-foreground: #0f172a;
 
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
@@ -35,18 +57,24 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --radius-lg: var(--radius);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background:           var(--background);
+  --color-foreground:           var(--foreground);
+  --color-card:                 var(--card);
+  --color-card-foreground:      var(--card-foreground);
+  --color-primary:              var(--primary);
+  --color-primary-foreground:   var(--primary-foreground);
+  --color-success:              var(--success);
+  --color-success-foreground:   var(--success-foreground);
+  --color-accent:               var(--accent);
+  --color-accent-foreground:    var(--accent-foreground);
+  --color-destructive:          var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted:                var(--muted);
+  --color-muted-foreground:     var(--muted-foreground);
+  --color-border:               var(--border);
+  --radius-lg:                  var(--radius);
+  --font-sans:                  var(--font-geist-sans);
+  --font-mono:                  var(--font-geist-mono);
 }
 
 body {

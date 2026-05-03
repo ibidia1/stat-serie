@@ -161,8 +161,8 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
                         className="pointer-events-none absolute inset-x-0 z-20 flex items-center"
                         style={{ top: `${nowTop}px` }}
                       >
-                        <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
-                        <div className="h-px flex-1 bg-red-400/60" />
+                        <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
+                        <div className="h-px flex-1 bg-destructive/60" />
                       </div>
                     )}
 
@@ -190,7 +190,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
 
           {/* Legend */}
           <div className="flex items-center gap-4 border-t border-border px-3 py-1.5">
-            {([["qcm", "✍️ QCM", "bg-blue-500"], ["lecture", "📖 Lecture", "bg-emerald-500"], ["revision_slot", "🔁 Révision", "bg-amber-400"]] as const).map(([, label, bar]) => (
+            {([["qcm", "✍️ QCM", "bg-primary"], ["lecture", "📖 Lecture", "bg-success"], ["revision_slot", "🔁 Révision", "bg-accent"]] as const).map(([, label, bar]) => (
               <div key={label} className="flex items-center gap-1">
                 <div className={`h-2 w-2 rounded-sm ${bar}`} />
                 <span className="text-[10px] text-muted-foreground">{label}</span>

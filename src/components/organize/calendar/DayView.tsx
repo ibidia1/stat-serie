@@ -73,7 +73,7 @@ export function DayView({ date, onDateChange, events, onMarkDone, onDeleteEvent,
                             {ev.revisionInterval}
                           </span>
                         )}
-                        {done && <span className="text-[10px] text-emerald-600 dark:text-emerald-400">✅ Fait</span>}
+                        {done && <span className="text-[10px] text-success">✅ Fait</span>}
                       </div>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {course?.specialty} · {ev.startTime} · {minutesToDisplay(ev.durationMinutes)}
@@ -85,7 +85,7 @@ export function DayView({ date, onDateChange, events, onMarkDone, onDeleteEvent,
                       {!done && ev.type !== "revision_slot" && (
                         <button
                           onClick={() => onMarkDone(ev.id)}
-                          className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-400"
+                          className="rounded-lg border border-success/30 bg-success/[0.08] px-2 py-1 text-[11px] font-semibold text-success hover:bg-success/[0.14]"
                         >
                           Fait ✅
                         </button>
@@ -93,7 +93,7 @@ export function DayView({ date, onDateChange, events, onMarkDone, onDeleteEvent,
                       {!done && ev.type === "revision_slot" && (
                         <button
                           onClick={() => onExecuteRevision(ev)}
-                          className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-400"
+                          className="rounded-lg border border-accent/30 bg-accent/[0.08] px-2 py-1 text-[11px] font-semibold text-accent hover:bg-accent/[0.14]"
                         >
                           Lancer 🔁
                         </button>

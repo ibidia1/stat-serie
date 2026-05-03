@@ -37,7 +37,7 @@ export function AutoModeConfig({ config, onChange, generatedThisWeek }: Props) {
       <Card className="bg-gradient-to-br from-card to-primary/[0.03] dark:to-primary/[0.06]">
         <CardContent className="p-4">
           <div className="mb-3 flex items-center gap-2">
-            <Zap className="h-4 w-4 text-amber-500" />
+            <Zap className="h-4 w-4 text-accent" />
             <p className="text-sm font-bold tracking-tight">Mode automatique</p>
             <Switch
               checked={config.enabled}
@@ -59,10 +59,10 @@ export function AutoModeConfig({ config, onChange, generatedThisWeek }: Props) {
               {config.intervals.map((day, i) => (
                 <div key={day} className="flex items-center gap-0.5">
                   {i > 0 && <div className="h-px w-4 bg-border" />}
-                  <div className="flex items-center gap-0.5 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-400">
+                  <div className="flex items-center gap-0.5 rounded-full border border-accent/30 bg-accent/[0.08] px-2 py-0.5 text-[11px] font-bold text-accent">
                     J+{day}
                     {customMode && (
-                      <button onClick={() => removeInterval(day)} className="ml-1 text-amber-400 hover:text-amber-700">
+                      <button onClick={() => removeInterval(day)} className="ml-1 text-accent/60 hover:text-accent">
                         <X className="h-2.5 w-2.5" />
                       </button>
                     )}

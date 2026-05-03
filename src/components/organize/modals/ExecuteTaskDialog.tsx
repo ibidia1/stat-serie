@@ -32,8 +32,8 @@ export function ExecuteTaskDialog({ open, event, onClose, onLaunch }: Props) {
     <Dialog open={open} onClose={onClose} maxWidth="max-w-md">
       <DialogHeader onClose={onClose}>🔁 Exécuter la révision</DialogHeader>
       <DialogBody className="space-y-4">
-        <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 dark:border-amber-700/40 dark:bg-amber-950/30">
-          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">{event.title}</p>
+        <div className="rounded-lg border border-accent/20 bg-accent/[0.06] px-3 py-2">
+          <p className="text-xs font-semibold text-accent">{event.title}</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {course?.specialty} · {event.revisionInterval}
           </p>
@@ -74,8 +74,8 @@ export function ExecuteTaskDialog({ open, event, onClose, onLaunch }: Props) {
                       seriesId === s.id ? "bg-primary/10" : ""
                     }`}
                   >
-                    <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />
-                    <span className="text-xs font-bold tabular-nums text-amber-600 dark:text-amber-400">{s.rating.toFixed(1)}</span>
+                    <Star className="h-3 w-3 shrink-0 fill-accent text-accent" />
+                    <span className="text-xs font-bold tabular-nums text-accent">{s.rating.toFixed(1)}</span>
                     <span className="flex-1 text-xs">{s.year} · FM{s.faculty.slice(0,1)} {s.faculty}</span>
                     <span className="text-[10px] text-muted-foreground tabular-nums">
                       {s.numberOfQuestions} Q {d ? `· ~${minutesToDisplay(d)}` : ""}

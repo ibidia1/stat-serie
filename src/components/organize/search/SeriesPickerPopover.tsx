@@ -93,8 +93,8 @@ export function SeriesPickerPopover({ course, onClose, onSchedule, onBacklog }: 
                     }`}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />
-                      <span className="text-xs font-bold tabular-nums text-amber-600 dark:text-amber-400">{s.rating.toFixed(1)}</span>
+                      <Star className="h-3 w-3 shrink-0 fill-accent text-accent" />
+                      <span className="text-xs font-bold tabular-nums text-accent">{s.rating.toFixed(1)}</span>
                       <span className="truncate text-xs text-foreground">
                         {s.year} · FM{s.faculty.slice(0, 1)} {s.faculty}
                       </span>

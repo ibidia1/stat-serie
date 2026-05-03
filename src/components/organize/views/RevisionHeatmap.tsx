@@ -19,10 +19,10 @@ function countLevels(count: number): 0 | 1 | 2 | 3 | 4 {
 
 const LEVEL_BG = [
   "bg-muted dark:bg-muted/50",
-  "bg-emerald-200 dark:bg-emerald-900",
-  "bg-emerald-400 dark:bg-emerald-700",
-  "bg-emerald-500 dark:bg-emerald-500",
-  "bg-emerald-600 dark:bg-emerald-400",
+  "bg-success/20",
+  "bg-success/40",
+  "bg-success/70",
+  "bg-success",
 ];
 
 interface Props {

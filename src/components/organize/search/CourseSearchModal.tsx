@@ -8,8 +8,8 @@ import { getSeriesForCourse } from "../data/series";
 import type { Course } from "../data/types";
 
 const STATUS_DOT: Record<Course["status"], string> = {
-  completed:   "text-emerald-500",
-  in_progress: "text-amber-500",
+  completed:   "text-success",
+  in_progress: "text-accent",
   not_started: "text-muted-foreground",
 };
 const STATUS_LABEL: Record<Course["status"], string> = {

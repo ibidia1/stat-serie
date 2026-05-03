@@ -35,7 +35,7 @@ function AgendaItem({ event, index }: { event: CalendarEvent; index: number }) {
         </div>
       </div>
       {done
-        ? <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-emerald-500" />
+        ? <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-success" />
         : <Circle       className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground/30" />}
     </motion.div>
   );
@@ -77,7 +77,7 @@ export function TodayAgendaPanel({ events }: Props) {
             {todayEvs.length > 0 && (
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
                 <motion.div
-                  className="h-full rounded-full bg-emerald-500"
+                  className="h-full rounded-full bg-success"
                   initial={{ width: 0 }}
                   animate={{ width: `${todayEvs.length > 0 ? (doneCt / todayEvs.length) * 100 : 0}%` }}
                   transition={{ duration: 0.6, delay: 0.3 }}

@@ -9,9 +9,9 @@ import { parseISO, format, startOfWeek, addWeeks } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const STATUS_COLOR: Record<string, string> = {
-  completed:   "bg-emerald-500 dark:bg-emerald-400",
-  in_progress: "bg-amber-400 dark:bg-amber-300",
-  not_started: "bg-muted dark:bg-muted/70",
+  completed:   "bg-success",
+  in_progress: "bg-accent",
+  not_started: "bg-muted",
 };
 
 interface Props {
@@ -56,11 +56,11 @@ export function MacroPlanView({ examDate, events }: Props) {
             <div className="flex gap-4 text-right text-xs tabular-nums">
               <div>
                 <p className="text-muted-foreground">Cours terminés</p>
-                <p className="font-bold text-emerald-600 dark:text-emerald-400">{completed} / 75</p>
+                <p className="font-bold text-success">{completed} / 75</p>
               </div>
               <div>
                 <p className="text-muted-foreground">En cours</p>
-                <p className="font-bold text-amber-600 dark:text-amber-400">{inProgress}</p>
+                <p className="font-bold text-accent">{inProgress}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Semaines restantes</p>
@@ -76,7 +76,7 @@ export function MacroPlanView({ examDate, events }: Props) {
           {/* Progress bar */}
           <div className="mb-4 h-2 overflow-hidden rounded-full bg-muted">
             <motion.div
-              className="h-full rounded-full bg-emerald-500"
+              className="h-full rounded-full bg-success"
               initial={{ width: 0 }}
               animate={{ width: `${(completed / 75) * 100}%` }}
               transition={{ duration: 0.8, delay: 0.3 }}
@@ -109,7 +109,7 @@ export function MacroPlanView({ examDate, events }: Props) {
 
           {/* Legend */}
           <div className="mt-3 flex items-center gap-4 text-[10px]">
-            {([["completed", "bg-emerald-500", "Terminé"], ["in_progress", "bg-amber-400", "En cours"], ["not_started", "bg-muted", "Non commencé"]] as const).map(([, bg, label]) => (
+            {([["completed", "bg-success", "Terminé"], ["in_progress", "bg-accent", "En cours"], ["not_started", "bg-muted", "Non commencé"]] as const).map(([, bg, label]) => (
               <div key={label} className="flex items-center gap-1">
                 <div className={`h-2.5 w-2.5 rounded ${bg}`} />
                 <span className="text-muted-foreground">{label}</span>

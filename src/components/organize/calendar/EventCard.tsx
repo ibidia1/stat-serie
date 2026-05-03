@@ -32,7 +32,7 @@ export function EventCard({ event, compact, onDelete, onMarkDone, onEdit, onExec
         className={`absolute inset-x-0.5 overflow-hidden rounded px-1 py-0.5 text-[9px] leading-tight cursor-default select-none transition-shadow hover:shadow-md hover:z-10
           ${colors.bg} ${colors.borderLeft}
           ${done    ? "opacity-55" : ""}
-          ${overdue ? "ring-1 ring-red-400" : ""}
+          ${overdue ? "ring-1 ring-destructive" : ""}
         `}
         title={event.title}
       >
@@ -55,7 +55,7 @@ export function EventCard({ event, compact, onDelete, onMarkDone, onEdit, onExec
       className={`group absolute inset-x-0.5 overflow-hidden rounded-md px-2 py-1 text-[10px] leading-snug cursor-pointer select-none transition-shadow hover:shadow-lg hover:z-10
         ${colors.bg} ${colors.borderLeft}
         ${done    ? "opacity-55" : ""}
-        ${overdue ? "ring-1 ring-red-400" : ""}
+        ${overdue ? "ring-1 ring-destructive" : ""}
       `}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -80,7 +80,7 @@ export function EventCard({ event, compact, onDelete, onMarkDone, onEdit, onExec
           {event.type === "revision_slot" && onExecuteRevision && (
             <button
               onClick={(e) => { e.stopPropagation(); onExecuteRevision(event); }}
-              className="rounded bg-amber-500 p-0.5 text-white hover:bg-amber-600"
+              className="rounded bg-accent p-0.5 text-accent-foreground hover:bg-accent/80"
               title="Lancer"
             >
               <Play className="h-2.5 w-2.5 fill-current" />
@@ -89,7 +89,7 @@ export function EventCard({ event, compact, onDelete, onMarkDone, onEdit, onExec
           {event.type !== "revision_slot" && onMarkDone && (
             <button
               onClick={(e) => { e.stopPropagation(); onMarkDone(event.id); }}
-              className="rounded bg-emerald-500 p-0.5 text-white hover:bg-emerald-600"
+              className="rounded bg-success p-0.5 text-success-foreground hover:bg-success/80"
               title="Marquer fait"
             >
               <Play className="h-2.5 w-2.5 fill-current" />
@@ -107,7 +107,7 @@ export function EventCard({ event, compact, onDelete, onMarkDone, onEdit, onExec
           {onDelete && (
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(event.id); }}
-              className="rounded bg-red-50 p-0.5 text-red-500 hover:bg-red-100"
+              className="rounded bg-destructive/[0.08] p-0.5 text-destructive hover:bg-destructive/[0.14]"
               title="Supprimer"
             >
               <Trash2 className="h-2.5 w-2.5" />
