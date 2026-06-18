@@ -29,7 +29,8 @@ export function EventCard({ event, compact, onDelete, onMarkDone, onEdit, onExec
     return (
       <div
         style={style}
-        className={`absolute inset-x-0.5 overflow-hidden rounded px-1 py-0.5 text-[9px] leading-tight cursor-default select-none transition-shadow hover:shadow-md hover:z-10
+        data-event-id={event.id}
+        className={`absolute inset-x-0.5 z-[3] overflow-hidden rounded px-1 py-0.5 text-[9px] leading-tight cursor-default select-none transition-shadow hover:shadow-md hover:z-10
           ${colors.bg} ${colors.borderLeft}
           ${done    ? "opacity-55" : ""}
           ${overdue ? "ring-1 ring-destructive" : ""}
@@ -52,7 +53,8 @@ export function EventCard({ event, compact, onDelete, onMarkDone, onEdit, onExec
   return (
     <div
       style={style}
-      className={`group absolute inset-x-0.5 overflow-hidden rounded-md px-2 py-1 text-[10px] leading-snug cursor-pointer select-none transition-shadow hover:shadow-lg hover:z-10
+      data-event-id={event.id}
+      className={`group absolute inset-x-0.5 z-[3] overflow-hidden rounded-md px-2 py-1 text-[10px] leading-snug cursor-pointer select-none transition-shadow hover:shadow-lg hover:z-10
         ${colors.bg} ${colors.borderLeft}
         ${done    ? "opacity-55" : ""}
         ${overdue ? "ring-1 ring-destructive" : ""}

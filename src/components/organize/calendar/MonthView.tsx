@@ -1,9 +1,11 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Link2, Link2Off } from "lucide-react";
 import { monthCalendarDays, yearMonthLabel, nextYearMonth, prevYearMonth, currentYearMonth, formatDayHeader, todayISO } from "../lib/dateUtils";
 import { EVENT_COLORS } from "../lib/colors";
+import { ChainConnectors } from "./ChainConnectors";
 import type { CalendarEvent } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -19,6 +21,8 @@ interface Props {
 export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: Props) {
   const days  = monthCalendarDays(yearMonth);
   const today = todayISO();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [showLinks, setShowLinks] = useState(true);
 
   function eventsForDay(iso: string) {
     return events.filter((e) => e.startDate === iso).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -39,6 +43,15 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
             </button>
             <p className="text-sm font-semibold capitalize tabular-nums">{yearMonthLabel(yearMonth)}</p>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowLinks((v) => !v)}
+                title={showLinks ? "Masquer les liens de révision" : "Afficher les liens de révision"}
+                className={`rounded p-1 transition-colors hover:bg-muted ${
+                  showLinks ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {showLinks ? <Link2 className="h-4 w-4" /> : <Link2Off className="h-4 w-4" />}
+              </button>
               <button
                 onClick={() => onYearMonthChange(currentYearMonth())}
                 className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
@@ -61,7 +74,14 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
           </div>
 
           {/* Days grid */}
-          <div className="grid grid-cols-7">
+          <div ref={gridRef} className="relative grid grid-cols-7">
+            {showLinks && (
+              <ChainConnectors
+                scope={gridRef}
+                events={events}
+                recomputeKey={`${yearMonth}-${events.length}`}
+              />
+            )}
             {days.map((iso, idx) => {
               if (!iso) return <div key={`empty-${idx}`} className="border-b border-r border-border/50 min-h-[80px]" />;
               const dayEvents = eventsForDay(iso);
@@ -92,7 +112,8 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
                       return (
                         <div
                           key={ev.id}
-                          className={`truncate rounded px-1 py-0.5 text-[9px] font-medium ${c.bg} ${c.text}`}
+                          data-event-id={ev.id}
+                          className={`relative z-[3] truncate rounded px-1 py-0.5 text-[9px] font-medium ${c.bg} ${c.text}`}
                         >
                           {c.icon} {ev.title.replace(/^[^\s]+ /, "").slice(0, 18)}
                         </div>

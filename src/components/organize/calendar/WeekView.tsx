@@ -1,14 +1,15 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Link2, Link2Off } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   getMondayOfWeek, weekDates, formatWeekLabel, formatDayHeader,
   todayISO, timeToMinutes, minutesToDisplay, addDays, fromDate
 } from "../lib/dateUtils";
 import { EventCard } from "./EventCard";
+import { ChainConnectors } from "./ChainConnectors";
 import type { CalendarEvent } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { printWeek } from "../lib/pdfExport";
@@ -57,6 +58,8 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
   const dates   = weekDates(monday);
   const label   = formatWeekLabel(monday);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const gridRef   = useRef<HTMLDivElement>(null);
+  const [showLinks, setShowLinks] = useState(true);
 
   function eventsForDay(date: string) {
     return events.filter((e) => e.startDate === date).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -82,6 +85,15 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
             </div>
             <p className="text-xs font-semibold tabular-nums capitalize">{label}</p>
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowLinks((v) => !v)}
+                title={showLinks ? "Masquer les liens de révision" : "Afficher les liens de révision"}
+                className={`no-print rounded p-1 transition-colors hover:bg-muted ${
+                  showLinks ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {showLinks ? <Link2 className="h-3.5 w-3.5" /> : <Link2Off className="h-3.5 w-3.5" />}
+              </button>
               <button
                 onClick={() => onWeekChange(getMondayOfWeek(todayISO()))}
                 className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
@@ -117,7 +129,14 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
 
           {/* Time grid */}
           <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: "460px" }}>
-            <div className="grid" style={{ gridTemplateColumns: "32px repeat(7, 1fr)", height: `${GRID_HEIGHT}px` }}>
+            <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: "32px repeat(7, 1fr)", height: `${GRID_HEIGHT}px` }}>
+              {showLinks && (
+                <ChainConnectors
+                  scope={gridRef}
+                  events={events.filter((e) => dates.includes(e.startDate))}
+                  recomputeKey={`${monday}-${events.length}`}
+                />
+              )}
               {/* Hour labels */}
               <div className="relative">
                 {Array.from({ length: HOURS_END - HOURS_START }, (_, i) => (
