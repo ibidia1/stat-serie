@@ -31,7 +31,10 @@ import { Button } from "@/components/ui/button";
 import type { CalendarEvent, Course, EventType } from "./data/types";
 import { getSeriesForCourse } from "./data/series";
 import { estimateDuration } from "./hooks/useEstimation";
-import { todayISO, minutesToDisplay } from "./lib/dateUtils";
+import { minutesToDisplay, timeToMinutes, minutesToHHMM, formatShortDate } from "./lib/dateUtils";
+import { findFreeSlot } from "./lib/conflicts";
+import { AnimatePresence } from "motion/react";
+import { AlertTriangle } from "lucide-react";
 
 type View = "month" | "week" | "day";
 
@@ -47,6 +50,13 @@ export function OrganizePage() {
   const [addTaskOpen,      setAddTaskOpen]      = useState(false);
   const [templateOpen,     setTemplateOpen]     = useState(false);
   const [executeEvent,     setExecuteEvent]     = useState<CalendarEvent | null>(null);
+  const [toast,            setToast]            = useState<string | null>(null);
+
+  function flashToast(msg: string) {
+    setToast(msg);
+    window.clearTimeout((flashToast as unknown as { _t?: number })._t);
+    (flashToast as unknown as { _t?: number })._t = window.setTimeout(() => setToast(null), 3200);
+  }
 
   // ── Side-effects ──────────────────────────────────────────
   useSpacedRepetition(
@@ -55,11 +65,11 @@ export function OrganizePage() {
     (updated) => {
       for (const e of updated) {
         if (e.status === "rescheduled") {
-          actions.updateEvent(e.id, { startDate: e.startDate, status: "rescheduled" });
+          actions.updateEvent(e.id, { startDate: e.startDate, startTime: e.startTime, status: "rescheduled" });
         }
       }
     },
-    (revs) => actions.addManyEvents(revs),
+    (revs) => addEventsResolved(revs),
   );
 
   useNotifications(state.events, state.notifications, actions.addNotification);
@@ -89,6 +99,38 @@ export function OrganizePage() {
     setPickerCourse(course);
   }
 
+  // ── Conflict-free scheduling ──────────────────────────────
+  // Adds an event, shifting it to the next free slot if the requested time is taken.
+  function placeAndAddEvent(ev: Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">) {
+    const slot = findFreeSlot(state.events, ev.startDate, timeToMinutes(ev.startTime), ev.durationMinutes);
+    if (slot === null) {
+      flashToast(`Aucun créneau libre le ${formatShortDate(ev.startDate)}.`);
+      return null;
+    }
+    const time = minutesToHHMM(slot);
+    if (time !== ev.startTime) {
+      flashToast(`Créneau occupé — déplacé à ${time} pour éviter un chevauchement.`);
+    }
+    return actions.addEvent({ ...ev, startTime: time });
+  }
+
+  // Places a batch of events, each in a free slot (reserving as it goes) so none overlap.
+  function addEventsResolved(batch: CalendarEvent[]) {
+    const working = [...state.events];
+    const placed: CalendarEvent[] = [];
+    for (const r of batch) {
+      const slot = findFreeSlot(working, r.startDate, timeToMinutes(r.startTime), r.durationMinutes);
+      if (slot === null) continue;
+      const ev = { ...r, startTime: minutesToHHMM(slot) };
+      placed.push(ev);
+      working.push(ev);
+    }
+    if (placed.length > 0) actions.addManyEvents(placed);
+    if (placed.length < batch.length) {
+      flashToast("Certaines séances n'ont pas pu être placées (journées complètes).");
+    }
+  }
+
   function handleScheduleFromPicker(type: EventType, seriesId: string | undefined, date: string, time: string) {
     if (!pickerCourse) return;
     const series    = seriesId ? getSeriesForCourse(pickerCourse.id).find((s) => s.id === seriesId) : undefined;
@@ -96,7 +138,7 @@ export function OrganizePage() {
     const title     = type === "qcm"
       ? `✍️ QCM ${pickerCourse.shortTitle ?? pickerCourse.title}${series ? ` – ${series.year} FM${series.faculty.slice(0,1)}` : ""}`
       : `📖 Lecture ${pickerCourse.shortTitle ?? pickerCourse.title}`;
-    const ev = actions.addEvent({
+    const ev = placeAndAddEvent({
       type,
       courseId: pickerCourse.id,
       seriesId,
@@ -108,9 +150,9 @@ export function OrganizePage() {
       isRevision: false,
       status: "upcoming",
     });
-    if (mode === "auto" && state.autoMode.enabled) {
+    if (ev && mode === "auto" && state.autoMode.enabled) {
       const revs = generateRevisions(ev, state.autoMode);
-      if (revs.length > 0) actions.addManyEvents(revs);
+      if (revs.length > 0) addEventsResolved(revs);
     }
   }
 
@@ -119,12 +161,15 @@ export function OrganizePage() {
     const ev = state.events.find((e) => e.id === id);
     if (ev && mode === "auto" && state.autoMode.enabled) {
       const revs = generateRevisions({ ...ev, status: "done" }, state.autoMode);
-      if (revs.length > 0) actions.addManyEvents(revs);
+      if (revs.length > 0) addEventsResolved(revs);
     }
   }
 
-  function handleMoveEvent(id: string, newDate: string) {
-    actions.updateEvent(id, { startDate: newDate });
+  function handleMoveEvent(id: string, newDate: string, newTime: string) {
+    const patch: Partial<CalendarEvent> = { startDate: newDate, startTime: newTime };
+    const ev = state.events.find((e) => e.id === id);
+    if (ev?.status === "rescheduled") patch.status = "upcoming";
+    actions.updateEvent(id, patch);
   }
 
   function handleExecuteRevision(ev: CalendarEvent) {
@@ -143,7 +188,7 @@ export function OrganizePage() {
   }
 
   function handleTemplateApply(evs: CalendarEvent[]) {
-    actions.addManyEvents(evs);
+    addEventsResolved(evs);
   }
 
   // ── Derived counts ────────────────────────────────────────
@@ -230,6 +275,7 @@ export function OrganizePage() {
               onMarkDone={handleMarkDone}
               onMoveEvent={handleMoveEvent}
               onExecuteRevision={handleExecuteRevision}
+              onReject={flashToast}
             />
           </div>
 
@@ -283,7 +329,7 @@ export function OrganizePage() {
       <AddTaskDialog
         open={addTaskOpen}
         onClose={() => setAddTaskOpen(false)}
-        onAddEvent={actions.addEvent}
+        onAddEvent={placeAndAddEvent}
         onAddToBacklog={(type, courseId, seriesId) =>
           actions.addToBacklog({ type, courseId, seriesId })
         }
@@ -318,6 +364,23 @@ export function OrganizePage() {
         events={state.events}
         onMarkSkipped={actions.deleteEvent}
       />
+
+      {/* Conflict / scheduling toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.96 }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-2 rounded-xl border border-accent/30 bg-card px-4 py-2.5 text-xs font-medium text-foreground shadow-xl"
+            role="status"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0 text-accent" />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

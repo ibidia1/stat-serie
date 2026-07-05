@@ -1,5 +1,6 @@
 import type { CalendarEvent, AutoModeConfig } from "../data/types";
-import { addDays, fromDate, todayISO } from "./dateUtils";
+import { addDays, fromDate, todayISO, timeToMinutes, minutesToHHMM } from "./dateUtils";
+import { findFreeSlot } from "./conflicts";
 import { parseISO } from "date-fns";
 
 function uuid(): string {
@@ -36,11 +37,26 @@ export function generateRevisions(
 export function rescheduleOverdueRevisions(events: CalendarEvent[], preferredHour: string): CalendarEvent[] {
   const today = todayISO();
   const now   = new Date().toISOString();
+  const isOverdueRev = (e: CalendarEvent) =>
+    e.type === "revision_slot" && e.status === "upcoming" && e.startDate < today;
+
+  // Slots already taken on `today` by events that won't be moved.
+  const working = events.filter((e) => e.startDate === today && !isOverdueRev(e));
+  const desired = timeToMinutes(preferredHour);
+
   return events.map((e) => {
-    if (e.type === "revision_slot" && e.status === "upcoming" && e.startDate < today) {
-      return { ...e, startDate: today, startTime: preferredHour, status: "rescheduled" as const, updatedAt: now };
-    }
-    return e;
+    if (!isOverdueRev(e)) return e;
+    const slot = findFreeSlot(working, today, desired, e.durationMinutes);
+    const startMin = slot ?? desired; // day full → fall back (rare)
+    const moved: CalendarEvent = {
+      ...e,
+      startDate: today,
+      startTime: minutesToHHMM(startMin),
+      status: "rescheduled" as const,
+      updatedAt: now,
+    };
+    working.push(moved);
+    return moved;
   });
 }
 
@@ -51,7 +67,7 @@ export function computeStreak(events: CalendarEvent[]): number {
   );
 
   let streak = 0;
-  let cursor = new Date();
+  const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
 
   while (true) {

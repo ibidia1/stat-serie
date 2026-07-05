@@ -14,11 +14,7 @@ import type { CalendarEvent } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { printWeek } from "../lib/pdfExport";
 import { countdownDays } from "../lib/dateUtils";
-
-const HOURS_START = 7;
-const HOURS_END   = 22;
-const PX_PER_HOUR = 56;
-const GRID_HEIGHT = (HOURS_END - HOURS_START) * PX_PER_HOUR;
+import { HOURS_START, HOURS_END, PX_PER_HOUR, GRID_HEIGHT } from "./gridConstants";
 
 interface DroppableCellProps {
   date: string;
@@ -28,10 +24,11 @@ interface DroppableCellProps {
 }
 
 function DroppableCell({ date, children, isPast, isToday }: DroppableCellProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: `cell-${date}`, data: { date } });
+  const { setNodeRef, isOver } = useDroppable({ id: `cell-${date}`, data: { date, mode: "time" } });
   return (
     <div
       ref={setNodeRef}
+      data-day-cell={date}
       className={`relative border-l border-border/50 ${isToday ? "bg-primary/[0.018]" : ""} ${
         isOver && !isPast ? "bg-primary/10" : ""
       }`}
@@ -86,8 +83,11 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
             <p className="text-xs font-semibold tabular-nums capitalize">{label}</p>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={() => setShowLinks((v) => !v)}
                 title={showLinks ? "Masquer les liens de révision" : "Afficher les liens de révision"}
+                aria-label="Liens de révision espacée"
+                aria-pressed={showLinks}
                 className={`no-print rounded p-1 transition-colors hover:bg-muted ${
                   showLinks ? "text-primary" : "text-muted-foreground"
                 }`}
@@ -194,6 +194,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
                         <EventCard
                           key={ev.id}
                           event={ev}
+                          draggable
                           style={{ position: "absolute", top, left: 2, right: 2, height }}
                           onDelete={onDeleteEvent}
                           onMarkDone={onMarkDone}
@@ -215,6 +216,14 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
                 <span className="text-[10px] text-muted-foreground">{label}</span>
               </div>
             ))}
+            {showLinks && (
+              <div className="flex items-center gap-1" title="Lignes reliant un cours à ses révisions J2/J7/J10/J30">
+                <svg width="18" height="6" aria-hidden>
+                  <path d="M1 3 H17" stroke="var(--primary)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" opacity="0.6" />
+                </svg>
+                <span className="text-[10px] text-muted-foreground">Plan de révision</span>
+              </div>
+            )}
             <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
               {minutesToDisplay(
                 events

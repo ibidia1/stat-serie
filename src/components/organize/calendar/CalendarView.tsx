@@ -16,11 +16,12 @@ interface Props {
   examDate: string;
   onDeleteEvent: (id: string) => void;
   onMarkDone: (id: string) => void;
-  onMoveEvent: (id: string, newDate: string) => void;
+  onMoveEvent: (id: string, newDate: string, newTime: string) => void;
   onExecuteRevision: (ev: CalendarEvent) => void;
+  onReject?: (message: string) => void;
 }
 
-export function CalendarView({ view, events, examDate, onDeleteEvent, onMarkDone, onMoveEvent, onExecuteRevision }: Props) {
+export function CalendarView({ view, events, examDate, onDeleteEvent, onMarkDone, onMoveEvent, onExecuteRevision, onReject }: Props) {
   const [weekStart,  setWeekStart]  = useState(getMondayOfWeek(todayISO()));
   const [dayDate,    setDayDate]    = useState(todayISO());
   const [yearMonth,  setYearMonth]  = useState(currentYearMonth());
@@ -30,7 +31,7 @@ export function CalendarView({ view, events, examDate, onDeleteEvent, onMarkDone
   }
 
   return (
-    <DragDropContext events={events} onMoveEvent={onMoveEvent}>
+    <DragDropContext events={events} onMoveEvent={onMoveEvent} onReject={onReject}>
       {view === "month" && (
         <MonthView
           yearMonth={yearMonth}
