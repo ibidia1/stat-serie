@@ -5,6 +5,8 @@ import { Moon, Sun } from "lucide-react";
 import SerieIVASPage from "@/components/SerieIVASPage";
 import QCMCartePage from "@/components/QCMCartePage";
 import ResultatsExamenPage from "@/components/ResultatsExamenPage";
+import CalendrierIntelligent from "@/components/CalendrierIntelligent";
+import AccueilDashboard from "@/components/dashboard/AccueilDashboard";
 
 export default function Home() {
   const [isDark, setIsDark] = useState(false);
@@ -57,6 +59,32 @@ export default function Home() {
 
       <div className="mx-auto max-w-7xl px-4">
         <ResultatsExamenPage />
+      </div>
+
+      {/* Séparateur Calendrier intelligent */}
+      <div className="my-12 flex items-center gap-4 px-8">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Calendrier intelligent
+        </span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4">
+        <CalendrierIntelligent />
+      </div>
+
+      {/* Séparateur Dashboard d'accueil */}
+      <div className="my-12 flex items-center gap-4 px-8">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Dashboard d&apos;accueil
+        </span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+
+      <div className="pb-16">
+        <AccueilDashboard />
       </div>
     </div>
   );
