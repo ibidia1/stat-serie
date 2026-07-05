@@ -36,6 +36,7 @@ import {
   Stethoscope,
   Sun,
   Target,
+  TrendingUp,
   Trophy,
 } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
@@ -62,11 +63,12 @@ function useIsDark() {
 // ─────────────────────────────────────────────────────────
 // Mock data
 // ─────────────────────────────────────────────────────────
-const USER = {
-  email: "imenyousfi44@gmail.com",
-  name: "Imen",
-  initial: "I",
-};
+export interface AccueilDashboardProps {
+  /** Prénom affiché dans la salutation (brancher sur le profil utilisateur). */
+  userName?: string;
+  /** Initiale affichée dans l'avatar. */
+  userInitial?: string;
+}
 
 type Task = {
   id: string;
@@ -146,6 +148,10 @@ const ACCENT_RING: Record<Task["accent"], string> = {
   success: "bg-success/10 text-success ring-success/20",
 };
 
+/** Anneau de focus clavier commun à tous les éléments interactifs. */
+const FOCUS_RING =
+  "outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+
 function ProgressRing({ value }: { value: number }) {
   const r = 52;
   const c = 2 * Math.PI * r;
@@ -176,7 +182,7 @@ function ProgressRing({ value }: { value: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold text-foreground">{value}%</span>
+        <span className="text-2xl font-bold tabular-nums text-foreground">{value}%</span>
         <span className="text-[11px] font-medium text-muted-foreground">
           objectif
         </span>
@@ -204,7 +210,10 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
 // ─────────────────────────────────────────────────────────
 // Main dashboard
 // ─────────────────────────────────────────────────────────
-export default function AccueilDashboard() {
+export default function AccueilDashboard({
+  userName = "Imen",
+  userInitial = "I",
+}: AccueilDashboardProps) {
   const isDark = useIsDark();
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [now, setNow] = useState<Date | null>(null);
@@ -261,8 +270,11 @@ export default function AccueilDashboard() {
           {NAV_ITEMS.map(({ icon: Icon, label, active }) => (
             <button
               key={label}
+              type="button"
               title={label}
-              className={`group relative flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
+              aria-label={label}
+              aria-current={active ? "page" : undefined}
+              className={`group relative flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${FOCUS_RING} ${
                 active
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -276,10 +288,12 @@ export default function AccueilDashboard() {
           ))}
         </nav>
         <button
+          type="button"
           title="Profil"
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-accent to-[#ffc164] text-sm font-bold text-accent-foreground shadow-md"
+          aria-label="Profil"
+          className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-accent to-[#ffc164] text-sm font-bold text-accent-foreground shadow-md ${FOCUS_RING}`}
         >
-          {USER.initial}
+          {userInitial}
         </button>
       </aside>
 
@@ -307,9 +321,10 @@ export default function AccueilDashboard() {
 
           <div className="ml-auto flex items-center gap-2">
             <button
+              type="button"
               onClick={toggleDark}
               aria-label="Basculer le thème"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className={`flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${FOCUS_RING}`}
             >
               {isDark ? (
                 <Sun className="h-[18px] w-[18px]" />
@@ -318,14 +333,19 @@ export default function AccueilDashboard() {
               )}
             </button>
             <button
-              aria-label="Notifications"
-              className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              type="button"
+              aria-label="Notifications (1 non lue)"
+              className={`relative flex h-10 w-10 items-center justify-center rounded-xl border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${FOCUS_RING}`}
             >
               <Bell className="h-[18px] w-[18px]" />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
+              <span aria-hidden className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-destructive ring-2 ring-card" />
             </button>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-accent to-[#ffc164] text-sm font-bold text-accent-foreground shadow-sm">
-              {USER.initial}
+            <button
+              type="button"
+              aria-label="Profil"
+              className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-accent to-[#ffc164] text-sm font-bold text-accent-foreground shadow-sm ${FOCUS_RING}`}
+            >
+              {userInitial}
             </button>
           </div>
         </header>
@@ -344,32 +364,45 @@ export default function AccueilDashboard() {
             <Activity className="absolute right-6 top-6 hidden h-28 w-28 text-white/10 sm:block" />
             <div className="relative">
               <div className="mb-1 flex items-center gap-2 text-sm font-medium text-white/80">
-                <Calendar className="h-4 w-4" />
-                <span className="capitalize">{dateLabel || "Chargement…"}</span>
+                <Calendar className="h-4 w-4" aria-hidden />
+                {dateLabel ? (
+                  <span className="capitalize">{dateLabel}</span>
+                ) : (
+                  <span
+                    aria-hidden
+                    className="inline-block h-3.5 w-32 animate-pulse rounded-full bg-white/25"
+                  />
+                )}
                 {timeLabel && (
                   <>
-                    <span className="opacity-50">•</span>
-                    <Clock className="h-4 w-4" />
-                    <span>{timeLabel}</span>
+                    <span className="opacity-50" aria-hidden>•</span>
+                    <Clock className="h-4 w-4" aria-hidden />
+                    <span className="tabular-nums">{timeLabel}</span>
                   </>
                 )}
               </div>
               <h1 className="text-2xl font-bold leading-tight md:text-3xl">
-                {greeting}, {USER.name} 👋
+                {greeting}, {userName} 👋
               </h1>
               <p className="mt-1.5 max-w-md text-sm text-white/85 md:text-base">
                 Prêt(e) pour votre session d&apos;étude&nbsp;? Vous avez{" "}
                 {TODAY_TASKS.length - completedCount} activité
-                {TODAY_TASKS.length - completedCount > 1 ? "s" : ""} au programme
-                aujourd&apos;hui.
+                {TODAY_TASKS.length - completedCount > 1 ? "s" : ""}
+                {" au programme aujourd'hui."}
               </p>
               <div className="mt-5 flex flex-wrap gap-2.5">
-                <button className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-md transition-transform hover:-translate-y-0.5">
-                  <Play className="h-4 w-4 fill-current" />
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-primary shadow-md transition-transform hover:-translate-y-0.5 outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                >
+                  <Play className="h-4 w-4 fill-current" aria-hidden />
                   Reprendre ma session
                 </button>
-                <button className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/30 backdrop-blur-sm transition-colors hover:bg-white/25">
-                  <Sparkles className="h-4 w-4" />
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-inset ring-white/30 backdrop-blur-sm transition-colors hover:bg-white/25 outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                >
+                  <Sparkles className="h-4 w-4" aria-hidden />
                   Suggestion du jour
                 </button>
               </div>
@@ -425,7 +458,7 @@ export default function AccueilDashboard() {
                     >
                       <s.icon className={`h-[18px] w-[18px] ${s.tint}`} />
                     </div>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold tabular-nums text-foreground">
                       {s.value}
                     </p>
                     <p className="text-xs font-medium text-muted-foreground">
@@ -470,7 +503,7 @@ export default function AccueilDashboard() {
                           transition={{ duration: 0.4 }}
                         />
                       </div>
-                      <span className="text-xs font-semibold text-muted-foreground">
+                      <span className="w-8 text-right text-xs font-semibold tabular-nums text-muted-foreground">
                         {taskProgress}%
                       </span>
                     </div>
@@ -482,8 +515,11 @@ export default function AccueilDashboard() {
                       return (
                         <li key={task.id}>
                           <button
+                            type="button"
                             onClick={() => toggleTask(task.id)}
-                            className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                            aria-pressed={isDone}
+                            aria-label={`${task.title} — marquer comme ${isDone ? "à faire" : "terminé"}`}
+                            className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${FOCUS_RING} ${
                               isDone
                                 ? "border-success/30 bg-success/5"
                                 : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
@@ -524,7 +560,7 @@ export default function AccueilDashboard() {
                                   {task.place}
                                 </span>
                               )}
-                              <span className="flex items-center gap-1">
+                              <span className="flex items-center gap-1 tabular-nums">
                                 <Clock className="h-3.5 w-3.5" />
                                 {task.time}
                               </span>
@@ -537,12 +573,27 @@ export default function AccueilDashboard() {
                       );
                     })}
                   </ul>
+
+                  {completedCount === TODAY_TASKS.length && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-4 flex items-center gap-2 rounded-xl bg-success/10 px-3.5 py-2.5 text-xs font-semibold text-success"
+                      role="status"
+                    >
+                      <Trophy className="h-4 w-4 shrink-0" aria-hidden />
+                      Programme du jour terminé — excellent travail, à demain !
+                    </motion.div>
+                  )}
                 </CardContent>
               </Card>
 
               {/* Quick actions */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <button className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#6b93ff] p-6 text-left text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-1">
+                <button
+                  type="button"
+                  className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#6b93ff] p-6 text-left text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-1 ${FOCUS_RING}`}
+                >
                   <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
                   <BookOpen className="mb-8 h-7 w-7" />
                   <div className="flex items-end justify-between">
@@ -556,7 +607,10 @@ export default function AccueilDashboard() {
                   </div>
                 </button>
 
-                <button className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent to-[#ffb74d] p-6 text-left text-accent-foreground shadow-lg shadow-accent/20 transition-transform hover:-translate-y-1">
+                <button
+                  type="button"
+                  className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent to-[#ffb74d] p-6 text-left text-accent-foreground shadow-lg shadow-accent/20 transition-transform hover:-translate-y-1 ${FOCUS_RING}`}
+                >
                   <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10" />
                   <Filter className="mb-8 h-7 w-7" />
                   <div className="flex items-end justify-between">
@@ -588,8 +642,8 @@ export default function AccueilDashboard() {
                         </p>
                       </div>
                     </div>
-                    <span className="hidden items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success sm:flex">
-                      <TrendingUpIcon /> +18%
+                    <span className="hidden items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-success sm:flex">
+                      <TrendingUp className="h-3.5 w-3.5" aria-hidden /> +18%
                     </span>
                   </div>
                   <div className="h-44 w-full">
@@ -688,7 +742,10 @@ export default function AccueilDashboard() {
                       />
                     </div>
                   </div>
-                  <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+                  <button
+                    type="button"
+                    className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 ${FOCUS_RING}`}
+                  >
                     Reprendre
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -776,19 +833,3 @@ export default function AccueilDashboard() {
   );
 }
 
-function TrendingUpIcon() {
-  return (
-    <svg
-      className="h-3.5 w-3.5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </svg>
-  );
-}
