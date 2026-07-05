@@ -1,13 +1,72 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Link2, Link2Off } from "lucide-react";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { monthCalendarDays, yearMonthLabel, nextYearMonth, prevYearMonth, currentYearMonth, formatDayHeader, todayISO } from "../lib/dateUtils";
-import { EVENT_COLORS } from "../lib/colors";
+import { EVENT_COLORS, type EventColorSet } from "../lib/colors";
+import { ChainConnectors } from "./ChainConnectors";
 import type { CalendarEvent } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+
+function DroppableDay({
+  iso, isPast, onClick, className, children,
+}: {
+  iso: string;
+  isPast: boolean;
+  onClick: () => void;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `mcell-${iso}`,
+    data: { date: iso, mode: "day" },
+    disabled: isPast,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      onClick={onClick}
+      className={`${className} ${isOver && !isPast ? "bg-primary/5 ring-2 ring-inset ring-primary/40" : ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DraggableChip({ ev, c }: { ev: CalendarEvent; c: EventColorSet }) {
+  const done = ev.status === "done";
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: ev.id,
+    disabled: done,
+    data: {
+      kind: "event",
+      startTime: ev.startTime,
+      startDate: ev.startDate,
+      durationMinutes: ev.durationMinutes,
+    },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      data-event-id={ev.id}
+      {...(done ? {} : listeners)}
+      {...attributes}
+      onClick={(e) => e.stopPropagation()}
+      title={`${ev.title} — ${ev.startTime}${done ? "" : " (glisser pour déplacer)"}`}
+      style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
+      className={`relative z-[3] truncate rounded px-1 py-0.5 text-[9px] font-medium ${c.bg} ${c.text}
+        ${done ? "" : "cursor-grab active:cursor-grabbing"}
+        ${isDragging ? "opacity-70 ring-1 ring-primary/40" : ""}`}
+    >
+      {c.icon} {ev.title.replace(/^[^\s]+ /, "").slice(0, 18)}
+    </div>
+  );
+}
 
 interface Props {
   yearMonth: string;
@@ -19,6 +78,8 @@ interface Props {
 export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: Props) {
   const days  = monthCalendarDays(yearMonth);
   const today = todayISO();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [showLinks, setShowLinks] = useState(true);
 
   function eventsForDay(iso: string) {
     return events.filter((e) => e.startDate === iso).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -39,6 +100,18 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
             </button>
             <p className="text-sm font-semibold capitalize tabular-nums">{yearMonthLabel(yearMonth)}</p>
             <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setShowLinks((v) => !v)}
+                title={showLinks ? "Masquer les liens de révision" : "Afficher les liens de révision"}
+                aria-label="Liens de révision espacée"
+                aria-pressed={showLinks}
+                className={`rounded p-1 transition-colors hover:bg-muted ${
+                  showLinks ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {showLinks ? <Link2 className="h-4 w-4" /> : <Link2Off className="h-4 w-4" />}
+              </button>
               <button
                 onClick={() => onYearMonthChange(currentYearMonth())}
                 className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
@@ -61,7 +134,14 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
           </div>
 
           {/* Days grid */}
-          <div className="grid grid-cols-7">
+          <div ref={gridRef} className="relative grid grid-cols-7">
+            {showLinks && (
+              <ChainConnectors
+                scope={gridRef}
+                events={events}
+                recomputeKey={`${yearMonth}-${events.length}`}
+              />
+            )}
             {days.map((iso, idx) => {
               if (!iso) return <div key={`empty-${idx}`} className="border-b border-r border-border/50 min-h-[80px]" />;
               const dayEvents = eventsForDay(iso);
@@ -72,8 +152,10 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
               const extra     = dayEvents.length - 3;
 
               return (
-                <div
+                <DroppableDay
                   key={iso}
+                  iso={iso}
+                  isPast={isPast}
                   onClick={() => onDayClick(iso)}
                   className={`min-h-[80px] cursor-pointer border-b border-r border-border/50 p-1 transition-colors hover:bg-muted/40 ${
                     isPast ? "opacity-60" : ""
@@ -87,22 +169,14 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
                     {day}
                   </div>
                   <div className="space-y-0.5">
-                    {visible.map((ev) => {
-                      const c = EVENT_COLORS[ev.type];
-                      return (
-                        <div
-                          key={ev.id}
-                          className={`truncate rounded px-1 py-0.5 text-[9px] font-medium ${c.bg} ${c.text}`}
-                        >
-                          {c.icon} {ev.title.replace(/^[^\s]+ /, "").slice(0, 18)}
-                        </div>
-                      );
-                    })}
+                    {visible.map((ev) => (
+                      <DraggableChip key={ev.id} ev={ev} c={EVENT_COLORS[ev.type]} />
+                    ))}
                     {extra > 0 && (
                       <div className="text-[9px] text-muted-foreground">+{extra} de plus</div>
                     )}
                   </div>
-                </div>
+                </DroppableDay>
               );
             })}
           </div>

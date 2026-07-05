@@ -83,3 +83,18 @@ body {
   font-family: var(--font-geist-sans, Arial, Helvetica, sans-serif);
   -webkit-font-smoothing: antialiased;
 }
+
+/* Flowing dashes for spaced-repetition connector lines */
+@keyframes qe-chain-flow {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+.qe-chain-flow {
+  animation: qe-chain-flow 1.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .qe-chain-flow {
+    animation: none;
+  }
+}
