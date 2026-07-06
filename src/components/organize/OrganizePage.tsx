@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Plus, LayoutTemplate } from "lucide-react";
 import { generateRevisions } from "./lib/spacedRepetitionAlgo";
@@ -31,12 +31,21 @@ import { Button } from "@/components/ui/button";
 import type { CalendarEvent, Course, EventType } from "./data/types";
 import { getSeriesForCourse } from "./data/series";
 import { estimateDuration } from "./hooks/useEstimation";
-import { minutesToDisplay, timeToMinutes, minutesToHHMM, formatShortDate } from "./lib/dateUtils";
-import { findFreeSlot } from "./lib/conflicts";
+import { minutesToDisplay, timeToMinutes, minutesToHHMM, formatShortDate, todayISO } from "./lib/dateUtils";
+import { findFreeSlot, findConflict, findBlocked, blockedSpansForDay } from "./lib/conflicts";
+import { COURSES } from "./data/courses";
+import { BlockedRangesDialog } from "./modals/BlockedRangesDialog";
 import { AnimatePresence } from "motion/react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarOff, CheckCircle2 } from "lucide-react";
+import type { BacklogItem } from "./data/types";
 
 type View = "month" | "week" | "day";
+
+interface Toast {
+  msg: string;
+  kind: "warn" | "success";
+  action?: { label: string; fn: () => void };
+}
 
 export function OrganizePage() {
   const { state, actions } = useOrganizeStore();
@@ -50,18 +59,24 @@ export function OrganizePage() {
   const [addTaskOpen,      setAddTaskOpen]      = useState(false);
   const [templateOpen,     setTemplateOpen]     = useState(false);
   const [executeEvent,     setExecuteEvent]     = useState<CalendarEvent | null>(null);
-  const [toast,            setToast]            = useState<string | null>(null);
+  const [blockedOpen,      setBlockedOpen]      = useState(false);
+  const [toast,            setToast]            = useState<Toast | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  function flashToast(msg: string) {
-    setToast(msg);
-    window.clearTimeout((flashToast as unknown as { _t?: number })._t);
-    (flashToast as unknown as { _t?: number })._t = window.setTimeout(() => setToast(null), 3200);
+  function showToast(msg: string, opts: Partial<Omit<Toast, "msg">> = {}) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ msg, kind: opts.kind ?? "warn", action: opts.action });
+    toastTimer.current = setTimeout(() => setToast(null), opts.action ? 6000 : 3200);
   }
+  const flashToast = (msg: string) => showToast(msg, { kind: "warn" });
+
+  const blockedFor = (date: string) => blockedSpansForDay(state.blockedRanges, date);
 
   // ── Side-effects ──────────────────────────────────────────
   useSpacedRepetition(
     state.events,
     state.autoMode,
+    state.blockedRanges,
     (updated) => {
       for (const e of updated) {
         if (e.status === "rescheduled") {
@@ -102,7 +117,9 @@ export function OrganizePage() {
   // ── Conflict-free scheduling ──────────────────────────────
   // Adds an event, shifting it to the next free slot if the requested time is taken.
   function placeAndAddEvent(ev: Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">) {
-    const slot = findFreeSlot(state.events, ev.startDate, timeToMinutes(ev.startTime), ev.durationMinutes);
+    const slot = findFreeSlot(state.events, ev.startDate, timeToMinutes(ev.startTime), ev.durationMinutes, {
+      blocked: blockedFor(ev.startDate),
+    });
     if (slot === null) {
       flashToast(`Aucun créneau libre le ${formatShortDate(ev.startDate)}.`);
       return null;
@@ -119,7 +136,9 @@ export function OrganizePage() {
     const working = [...state.events];
     const placed: CalendarEvent[] = [];
     for (const r of batch) {
-      const slot = findFreeSlot(working, r.startDate, timeToMinutes(r.startTime), r.durationMinutes);
+      const slot = findFreeSlot(working, r.startDate, timeToMinutes(r.startTime), r.durationMinutes, {
+        blocked: blockedFor(r.startDate),
+      });
       if (slot === null) continue;
       const ev = { ...r, startTime: minutesToHHMM(slot) };
       placed.push(ev);
@@ -129,6 +148,37 @@ export function OrganizePage() {
     if (placed.length < batch.length) {
       flashToast("Certaines séances n'ont pas pu être placées (journées complètes).");
     }
+  }
+
+  // Shifts every upcoming revision of a chain by `dayDelta` days (conflict-aware).
+  function shiftChainRevisions(children: CalendarEvent[], dayDelta: number) {
+    const shiftDate = (iso: string, delta: number) => {
+      const d = new Date(iso + "T00:00:00");
+      d.setDate(d.getDate() + delta);
+      return d.toISOString().slice(0, 10);
+    };
+    const working = [...state.events];
+    let moved = 0;
+    for (const child of children) {
+      let target = shiftDate(child.startDate, dayDelta);
+      if (target < todayISO()) target = todayISO();
+      const slot = findFreeSlot(working, target, timeToMinutes(child.startTime), child.durationMinutes, {
+        ignoreId: child.id,
+        blocked: blockedFor(target),
+      });
+      if (slot === null) continue;
+      const startTime = minutesToHHMM(slot);
+      actions.updateEvent(child.id, { startDate: target, startTime });
+      const idx = working.findIndex((e) => e.id === child.id);
+      if (idx >= 0) working[idx] = { ...working[idx], startDate: target, startTime };
+      moved++;
+    }
+    showToast(
+      moved === children.length
+        ? `${moved} révision${moved > 1 ? "s" : ""} décalée${moved > 1 ? "s" : ""} de ${dayDelta > 0 ? "+" : ""}${dayDelta} j.`
+        : `${moved}/${children.length} révisions décalées (créneaux indisponibles pour les autres).`,
+      { kind: "success" },
+    );
   }
 
   function handleScheduleFromPicker(type: EventType, seriesId: string | undefined, date: string, time: string) {
@@ -166,10 +216,120 @@ export function OrganizePage() {
   }
 
   function handleMoveEvent(id: string, newDate: string, newTime: string) {
-    const patch: Partial<CalendarEvent> = { startDate: newDate, startTime: newTime };
     const ev = state.events.find((e) => e.id === id);
-    if (ev?.status === "rescheduled") patch.status = "upcoming";
+    if (!ev) return;
+
+    const prev: Partial<CalendarEvent> = {
+      startDate: ev.startDate,
+      startTime: ev.startTime,
+      status: ev.status,
+    };
+    const patch: Partial<CalendarEvent> = { startDate: newDate, startTime: newTime };
+    if (ev.status === "rescheduled") patch.status = "upcoming";
     actions.updateEvent(id, patch);
+
+    // Source d'un plan de répétition déplacée → proposer de décaler la chaîne.
+    const dayDelta = Math.round(
+      (new Date(newDate + "T00:00:00").getTime() - new Date(ev.startDate + "T00:00:00").getTime()) / 86400000,
+    );
+    const children = state.events.filter(
+      (c) => c.isRevision && c.parentEventId === id && c.status !== "done" && c.status !== "skipped",
+    );
+
+    if (!ev.isRevision && children.length > 0 && dayDelta !== 0) {
+      showToast(
+        `Séance déplacée au ${formatShortDate(newDate)} ${newTime}. Décaler aussi les ${children.length} révisions liées ?`,
+        {
+          kind: "success",
+          action: {
+            label: `Décaler (${dayDelta > 0 ? "+" : ""}${dayDelta} j)`,
+            fn: () => shiftChainRevisions(children, dayDelta),
+          },
+        },
+      );
+    } else {
+      showToast(`Séance déplacée au ${formatShortDate(newDate)} à ${newTime}.`, {
+        kind: "success",
+        action: { label: "Annuler", fn: () => actions.updateEvent(id, prev) },
+      });
+    }
+  }
+
+  // Drop d'un élément du backlog sur le calendrier → planification directe.
+  function handleBacklogDrop(item: BacklogItem, date: string, startMin: number | null) {
+    const course = COURSES.find((c) => c.id === item.courseId);
+    const series = item.seriesId
+      ? getSeriesForCourse(item.courseId).find((s) => s.id === item.seriesId)
+      : undefined;
+    const duration =
+      (series ? estimateDuration(series.numberOfQuestions) : null) ??
+      (item.type === "qcm" ? 30 : 45);
+    const shortName = course?.shortTitle ?? course?.title ?? `Cours #${item.courseId}`;
+    const title = item.type === "qcm" ? `✍️ QCM ${shortName}` : `📖 Lecture ${shortName}`;
+
+    const desired = startMin ?? timeToMinutes(state.autoMode.preferredHour);
+    const slot = findFreeSlot(state.events, date, desired, duration, { blocked: blockedFor(date) });
+    if (slot === null) {
+      flashToast(`Aucun créneau libre le ${formatShortDate(date)}.`);
+      return;
+    }
+
+    const created = actions.addEvent({
+      type: item.type,
+      courseId: item.courseId,
+      seriesId: item.seriesId,
+      title,
+      startDate: date,
+      startTime: minutesToHHMM(slot),
+      durationMinutes: duration,
+      estimatedFromKpi: series != null,
+      notes: item.notes,
+      isRevision: false,
+      status: "upcoming",
+    });
+    actions.removeFromBacklog(item.id);
+
+    showToast(`${shortName} planifié le ${formatShortDate(date)} à ${minutesToHHMM(slot)}.`, {
+      kind: "success",
+      action: {
+        label: "Annuler",
+        fn: () => {
+          actions.deleteEvent(created.id);
+          actions.addToBacklog({ type: item.type, courseId: item.courseId, seriesId: item.seriesId, notes: item.notes });
+        },
+      },
+    });
+  }
+
+  // Suppression avec possibilité d'annuler.
+  function handleDeleteEvent(id: string) {
+    const ev = state.events.find((e) => e.id === id);
+    actions.deleteEvent(id);
+    if (ev) {
+      showToast(`« ${ev.title.replace(/^[^\s]+ /, "")} » supprimé.`, {
+        kind: "success",
+        action: { label: "Annuler", fn: () => actions.addManyEvents([ev]) },
+      });
+    }
+  }
+
+  // Redimensionnement d'une séance (durée) — refuse chevauchements et plages bloquées.
+  function handleResizeEvent(id: string, newDurationMinutes: number) {
+    const ev = state.events.find((e) => e.id === id);
+    if (!ev) return;
+    const start = timeToMinutes(ev.startTime);
+
+    const blocked = findBlocked(blockedFor(ev.startDate), start, newDurationMinutes);
+    if (blocked) {
+      flashToast(`Impossible d'étendre dans la plage bloquée « ${blocked.label} ».`);
+      return;
+    }
+    const conflict = findConflict(state.events, ev.startDate, start, newDurationMinutes, id);
+    if (conflict) {
+      flashToast(`Chevauchement avec « ${conflict.title.replace(/^[^\s]+ /, "")} ».`);
+      return;
+    }
+    actions.updateEvent(id, { durationMinutes: newDurationMinutes });
   }
 
   function handleExecuteRevision(ev: CalendarEvent) {
@@ -244,6 +404,18 @@ export function OrganizePage() {
           <LayoutTemplate className="h-3.5 w-3.5" />
           Templates
         </button>
+        <button
+          onClick={() => setBlockedOpen(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <CalendarOff className="h-3.5 w-3.5" />
+          Plages bloquées
+          {state.blockedRanges.length > 0 && (
+            <span className="rounded-full bg-muted px-1.5 text-[10px] tabular-nums">
+              {state.blockedRanges.length}
+            </span>
+          )}
+        </button>
         <div className="flex-1" />
         <Tabs value={mainTab} onValueChange={setMainTab}>
           <TabsList>
@@ -271,10 +443,13 @@ export function OrganizePage() {
               view={view}
               events={state.events}
               examDate={state.examDate}
-              onDeleteEvent={actions.deleteEvent}
+              blockedRanges={state.blockedRanges}
+              onDeleteEvent={handleDeleteEvent}
               onMarkDone={handleMarkDone}
               onMoveEvent={handleMoveEvent}
               onExecuteRevision={handleExecuteRevision}
+              onResizeEvent={handleResizeEvent}
+              onBacklogDrop={handleBacklogDrop}
               onReject={flashToast}
             />
           </div>
@@ -365,6 +540,15 @@ export function OrganizePage() {
         onMarkSkipped={actions.deleteEvent}
       />
 
+      {/* Plages bloquées */}
+      <BlockedRangesDialog
+        open={blockedOpen}
+        onClose={() => setBlockedOpen(false)}
+        ranges={state.blockedRanges}
+        onAdd={actions.addBlockedRange}
+        onRemove={actions.removeBlockedRange}
+      />
+
       {/* Conflict / scheduling toast */}
       <AnimatePresence>
         {toast && (
@@ -373,11 +557,29 @@ export function OrganizePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-2 rounded-xl border border-accent/30 bg-card px-4 py-2.5 text-xs font-medium text-foreground shadow-xl"
+            className={`fixed bottom-5 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-2.5 rounded-xl border bg-card px-4 py-2.5 text-xs font-medium text-foreground shadow-xl ${
+              toast.kind === "success" ? "border-success/30" : "border-accent/30"
+            }`}
             role="status"
           >
-            <AlertTriangle className="h-4 w-4 shrink-0 text-accent" />
-            {toast}
+            {toast.kind === "success" ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 shrink-0 text-accent" />
+            )}
+            <span>{toast.msg}</span>
+            {toast.action && (
+              <button
+                onClick={() => {
+                  toast.action!.fn();
+                  if (toastTimer.current) clearTimeout(toastTimer.current);
+                  setToast(null);
+                }}
+                className="ml-1 shrink-0 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary transition-colors hover:bg-primary/20"
+              >
+                {toast.action.label}
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

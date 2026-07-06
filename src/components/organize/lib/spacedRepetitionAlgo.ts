@@ -1,6 +1,6 @@
 import type { CalendarEvent, AutoModeConfig } from "../data/types";
 import { addDays, fromDate, todayISO, timeToMinutes, minutesToHHMM } from "./dateUtils";
-import { findFreeSlot } from "./conflicts";
+import { findFreeSlot, type BlockedSpan } from "./conflicts";
 import { parseISO } from "date-fns";
 
 function uuid(): string {
@@ -34,7 +34,11 @@ export function generateRevisions(
   }));
 }
 
-export function rescheduleOverdueRevisions(events: CalendarEvent[], preferredHour: string): CalendarEvent[] {
+export function rescheduleOverdueRevisions(
+  events: CalendarEvent[],
+  preferredHour: string,
+  blocked: BlockedSpan[] = [],
+): CalendarEvent[] {
   const today = todayISO();
   const now   = new Date().toISOString();
   const isOverdueRev = (e: CalendarEvent) =>
@@ -46,7 +50,7 @@ export function rescheduleOverdueRevisions(events: CalendarEvent[], preferredHou
 
   return events.map((e) => {
     if (!isOverdueRev(e)) return e;
-    const slot = findFreeSlot(working, today, desired, e.durationMinutes);
+    const slot = findFreeSlot(working, today, desired, e.durationMinutes, { blocked });
     const startMin = slot ?? desired; // day full → fall back (rare)
     const moved: CalendarEvent = {
       ...e,
@@ -77,6 +81,56 @@ export function computeStreak(events: CalendarEvent[]): number {
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
+}
+
+export interface AdherenceStats {
+  /** Révisions terminées. */
+  doneCount: number;
+  /** Révisions faites au plus tard le jour planifié. */
+  onTimeCount: number;
+  /** onTimeCount / doneCount, ou null si aucune révision faite. */
+  onTimeRate: number | null;
+  /** Retard moyen (en jours) des révisions faites en retard, ou null. */
+  avgDelayDays: number | null;
+  /** Révisions planifiées dans le passé et toujours non faites. */
+  overdueCount: number;
+}
+
+/** Mesure l'adhérence au plan de répétition espacée. */
+export function computeAdherence(events: CalendarEvent[]): AdherenceStats {
+  const today = todayISO();
+  const revs = events.filter((e) => e.type === "revision_slot");
+
+  const done = revs.filter((e) => e.status === "done" && e.completedAt);
+  let onTime = 0;
+  const delays: number[] = [];
+  for (const e of done) {
+    const doneDay = e.completedAt!.slice(0, 10);
+    if (doneDay <= e.startDate) {
+      onTime++;
+    } else {
+      delays.push(
+        Math.round(
+          (parseISO(doneDay).getTime() - parseISO(e.startDate).getTime()) / 86400000,
+        ),
+      );
+    }
+  }
+
+  const overdueCount = revs.filter(
+    (e) => (e.status === "upcoming" || e.status === "rescheduled") && e.startDate < today,
+  ).length;
+
+  return {
+    doneCount: done.length,
+    onTimeCount: onTime,
+    onTimeRate: done.length > 0 ? onTime / done.length : null,
+    avgDelayDays:
+      delays.length > 0
+        ? Math.round((delays.reduce((s, d) => s + d, 0) / delays.length) * 10) / 10
+        : null,
+    overdueCount,
+  };
 }
 
 export function computeBestStreak(events: CalendarEvent[]): number {

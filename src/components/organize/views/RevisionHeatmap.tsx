@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import type { CalendarEvent } from "../data/types";
-import { computeStreak, computeBestStreak } from "../lib/spacedRepetitionAlgo";
+import { computeStreak, computeBestStreak, computeAdherence } from "../lib/spacedRepetitionAlgo";
 import { formatShortDate } from "../lib/dateUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { parseISO, eachDayOfInterval, subDays, format } from "date-fns";
@@ -58,6 +58,7 @@ export function RevisionHeatmap({ events }: Props) {
 
   const streak     = computeStreak(events);
   const bestStreak = computeBestStreak(events);
+  const adherence  = computeAdherence(events);
 
   return (
     <motion.div
@@ -82,6 +83,38 @@ export function RevisionHeatmap({ events }: Props) {
                 <p className="text-lg font-bold tabular-nums text-foreground">{bestStreak} j</p>
               </div>
             </div>
+          </div>
+
+          {/* Adhérence au plan de répétition espacée */}
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold tabular-nums ${
+                adherence.onTimeRate === null
+                  ? "border-border text-muted-foreground"
+                  : adherence.onTimeRate >= 0.8
+                    ? "border-success/30 bg-success/[0.08] text-success"
+                    : adherence.onTimeRate >= 0.5
+                      ? "border-accent/30 bg-accent/[0.08] text-accent"
+                      : "border-destructive/30 bg-destructive/[0.08] text-destructive"
+              }`}
+              title="Part des révisions faites au plus tard le jour planifié"
+            >
+              🎯 Adhérence au plan :{" "}
+              {adherence.onTimeRate === null ? "—" : `${Math.round(adherence.onTimeRate * 100)} %`}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium tabular-nums text-muted-foreground">
+              ✅ À l&apos;heure : {adherence.onTimeCount}/{adherence.doneCount}
+            </span>
+            {adherence.avgDelayDays !== null && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium tabular-nums text-muted-foreground">
+                ⏱️ Retard moyen : {adherence.avgDelayDays} j
+              </span>
+            )}
+            {adherence.overdueCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/[0.08] px-2.5 py-1 text-[11px] font-semibold tabular-nums text-destructive">
+                ⚠️ {adherence.overdueCount} en retard
+              </span>
+            )}
           </div>
 
           {/* Month labels */}

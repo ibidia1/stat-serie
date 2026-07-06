@@ -6,7 +6,8 @@ import { WeekView } from "./WeekView";
 import { DayView } from "./DayView";
 import { DragDropContext } from "./DragDropContext";
 import { getMondayOfWeek, todayISO, currentYearMonth } from "../lib/dateUtils";
-import type { CalendarEvent } from "../data/types";
+import { blockedSpansForDay } from "../lib/conflicts";
+import type { BacklogItem, BlockedRange, CalendarEvent } from "../data/types";
 
 type View = "month" | "week" | "day";
 
@@ -14,14 +15,21 @@ interface Props {
   view: View;
   events: CalendarEvent[];
   examDate: string;
+  blockedRanges: BlockedRange[];
   onDeleteEvent: (id: string) => void;
   onMarkDone: (id: string) => void;
   onMoveEvent: (id: string, newDate: string, newTime: string) => void;
   onExecuteRevision: (ev: CalendarEvent) => void;
+  onResizeEvent: (id: string, newDurationMinutes: number) => void;
+  onBacklogDrop: (item: BacklogItem, date: string, startMin: number | null) => void;
   onReject?: (message: string) => void;
 }
 
-export function CalendarView({ view, events, examDate, onDeleteEvent, onMarkDone, onMoveEvent, onExecuteRevision, onReject }: Props) {
+export function CalendarView({
+  view, events, examDate, blockedRanges,
+  onDeleteEvent, onMarkDone, onMoveEvent, onExecuteRevision,
+  onResizeEvent, onBacklogDrop, onReject,
+}: Props) {
   const [weekStart,  setWeekStart]  = useState(getMondayOfWeek(todayISO()));
   const [dayDate,    setDayDate]    = useState(todayISO());
   const [yearMonth,  setYearMonth]  = useState(currentYearMonth());
@@ -31,7 +39,13 @@ export function CalendarView({ view, events, examDate, onDeleteEvent, onMarkDone
   }
 
   return (
-    <DragDropContext events={events} onMoveEvent={onMoveEvent} onReject={onReject}>
+    <DragDropContext
+      events={events}
+      blockedForDay={(d) => blockedSpansForDay(blockedRanges, d)}
+      onMoveEvent={onMoveEvent}
+      onBacklogDrop={onBacklogDrop}
+      onReject={onReject}
+    >
       {view === "month" && (
         <MonthView
           yearMonth={yearMonth}
@@ -46,9 +60,11 @@ export function CalendarView({ view, events, examDate, onDeleteEvent, onMarkDone
           onWeekChange={setWeekStart}
           events={events}
           examDate={examDate}
+          blockedRanges={blockedRanges}
           onDeleteEvent={onDeleteEvent}
           onMarkDone={onMarkDone}
           onExecuteRevision={onExecuteRevision}
+          onResizeEvent={onResizeEvent}
         />
       )}
       {view === "day" && (

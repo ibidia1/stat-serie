@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Play, Edit2, Trash2, GripVertical } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { EVENT_COLORS } from "../lib/colors";
-import { minutesToDisplay } from "../lib/dateUtils";
+import { minutesToDisplay, timeToMinutes } from "../lib/dateUtils";
+import { snap } from "../lib/conflicts";
+import { PX_PER_HOUR, DAY_END_MIN } from "./gridConstants";
 import type { CalendarEvent } from "../data/types";
 import { COURSES } from "../data/courses";
 
@@ -17,11 +19,15 @@ interface Props {
   onMarkDone?: (id: string) => void;
   onEdit?: (event: CalendarEvent) => void;
   onExecuteRevision?: (event: CalendarEvent) => void;
+  /** Redimensionnement de la durée par la poignée du bas (vue Semaine). */
+  onResizeCommit?: (id: string, newDurationMinutes: number) => void;
   style?: React.CSSProperties;
 }
 
-export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onEdit, onExecuteRevision, style }: Props) {
+export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onEdit, onExecuteRevision, onResizeCommit, style }: Props) {
   const [hovered, setHovered] = useState(false);
+  const [previewDur, setPreviewDur] = useState<number | null>(null);
+  const resizeStart = useRef<{ y: number; dur: number } | null>(null);
   const colors  = EVENT_COLORS[event.type];
   const today   = new Date().toISOString().slice(0, 10);
   const overdue = event.startDate < today && event.status === "upcoming";
@@ -45,12 +51,43 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
     },
   });
 
-  const dragStyle: React.CSSProperties = transform
-    ? { ...style, transform: CSS.Translate.toString(transform) }
-    : (style ?? {});
+  const dragStyle: React.CSSProperties = {
+    ...(style ?? {}),
+    ...(transform ? { transform: CSS.Translate.toString(transform) } : {}),
+    ...(previewDur !== null
+      ? { height: Math.max(18, (previewDur / 60) * PX_PER_HOUR - 2) }
+      : {}),
+  };
 
   // Prevent the action buttons from initiating a drag.
   const stopDrag = (e: React.PointerEvent) => e.stopPropagation();
+
+  // ── Resize (durée) via la poignée du bas ────────────────
+  const resizable = !!onResizeCommit && draggable && !done && !compact;
+
+  function onResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.stopPropagation();
+    e.preventDefault();
+    resizeStart.current = { y: e.clientY, dur: event.durationMinutes };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onResizePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!resizeStart.current) return;
+    const deltaMin = ((e.clientY - resizeStart.current.y) / PX_PER_HOUR) * 60;
+    const maxDur = DAY_END_MIN - timeToMinutes(event.startTime);
+    const next = Math.min(maxDur, Math.max(15, snap(resizeStart.current.dur + deltaMin)));
+    setPreviewDur(next);
+  }
+  function onResizePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (!resizeStart.current) return;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    const committed = previewDur;
+    resizeStart.current = null;
+    setPreviewDur(null);
+    if (committed !== null && committed !== event.durationMinutes) {
+      onResizeCommit?.(event.id, committed);
+    }
+  }
 
   if (compact) {
     return (
@@ -110,7 +147,9 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
       <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground">
         <span className="tabular-nums">{event.startTime}</span>
         <span>·</span>
-        <span className="tabular-nums">{minutesToDisplay(event.durationMinutes)}</span>
+        <span className={`tabular-nums ${previewDur !== null ? "font-bold text-primary" : ""}`}>
+          {minutesToDisplay(previewDur ?? event.durationMinutes)}
+        </span>
       </div>
 
       {hovered && (event.status !== "done") && (
@@ -155,6 +194,20 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
               <Trash2 className="h-2.5 w-2.5" />
             </button>
           )}
+        </div>
+      )}
+
+      {resizable && (
+        <div
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={onResizePointerUp}
+          title="Glisser pour ajuster la durée"
+          className={`absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize items-center justify-center transition-opacity ${
+            previewDur !== null ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          }`}
+        >
+          <div className="h-[3px] w-7 rounded-full bg-current opacity-40" />
         </div>
       )}
     </div>

@@ -92,6 +92,16 @@ export interface AutoModeConfig {
   preferredHour: string;
 }
 
+/** Plage horaire récurrente non planifiable (cours à la fac, sport, sommeil…). */
+export interface BlockedRange {
+  id: string;
+  label: string;
+  /** Jours concernés : 0 = lundi … 6 = dimanche. */
+  days: number[];
+  startTime: string; // HH:mm
+  endTime: string;   // HH:mm
+}
+
 export type NotificationKind =
   | "task_due_today"
   | "revision_overdue"
@@ -132,6 +142,7 @@ export interface OrganizeState {
   events: CalendarEvent[];
   backlog: BacklogItem[];
   autoMode: AutoModeConfig;
+  blockedRanges: BlockedRange[];
   notifications: AppNotification[];
   examDate: string;
   preferences: OrganizePreferences;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Printer, Link2, Link2Off } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
@@ -10,21 +10,30 @@ import {
 } from "../lib/dateUtils";
 import { EventCard } from "./EventCard";
 import { ChainConnectors } from "./ChainConnectors";
-import type { CalendarEvent } from "../data/types";
+import { DragHintContext } from "./DragDropContext";
+import { blockedSpansForDay, freeIntervals, type BlockedSpan } from "../lib/conflicts";
+import type { CalendarEvent, BlockedRange } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { printWeek } from "../lib/pdfExport";
 import { countdownDays } from "../lib/dateUtils";
-import { HOURS_START, HOURS_END, PX_PER_HOUR, GRID_HEIGHT } from "./gridConstants";
+import { HOURS_START, HOURS_END, PX_PER_HOUR, GRID_HEIGHT, DAY_START_MIN } from "./gridConstants";
+
+const minToPx = (min: number) => ((min - DAY_START_MIN) / 60) * PX_PER_HOUR;
 
 interface DroppableCellProps {
   date: string;
   children: React.ReactNode;
   isPast: boolean;
   isToday: boolean;
+  blocked: BlockedSpan[];
+  dayEvents: CalendarEvent[];
 }
 
-function DroppableCell({ date, children, isPast, isToday }: DroppableCellProps) {
+function DroppableCell({ date, children, isPast, isToday, blocked, dayEvents }: DroppableCellProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `cell-${date}`, data: { date, mode: "time" } });
+  const hint = useContext(DragHintContext);
+  const showHints = isOver && !isPast && hint !== null;
+
   return (
     <div
       ref={setNodeRef}
@@ -34,6 +43,36 @@ function DroppableCell({ date, children, isPast, isToday }: DroppableCellProps) 
       }`}
       style={{ height: `${GRID_HEIGHT}px` }}
     >
+      {/* Plages bloquées (non planifiables) */}
+      {blocked.map((b, i) => (
+        <div
+          key={`blk-${i}`}
+          className="pointer-events-none absolute inset-x-0 z-[1] overflow-hidden bg-muted/60"
+          style={{
+            top: minToPx(b.start),
+            height: Math.max(0, minToPx(b.end) - minToPx(b.start)),
+            backgroundImage:
+              "repeating-linear-gradient(-45deg, transparent 0 6px, var(--border) 6px 7px)",
+          }}
+        >
+          {b.end - b.start >= 45 && (
+            <span className="ml-1 mt-0.5 inline-block truncate text-[8px] font-semibold text-muted-foreground/80">
+              🚫 {b.label}
+            </span>
+          )}
+        </div>
+      ))}
+
+      {/* Créneaux libres suggérés pendant un drag */}
+      {showHints &&
+        freeIntervals(dayEvents, blocked, date, hint.durationMinutes, hint.ignoreId).map((f, i) => (
+          <div
+            key={`free-${i}`}
+            className="pointer-events-none absolute inset-x-0.5 z-[1] rounded bg-success/10 ring-1 ring-inset ring-success/40"
+            style={{ top: minToPx(f.start), height: minToPx(f.end) - minToPx(f.start) }}
+          />
+        ))}
+
       {children}
     </div>
   );
@@ -44,12 +83,14 @@ interface Props {
   onWeekChange: (iso: string) => void;
   events: CalendarEvent[];
   examDate: string;
+  blockedRanges: BlockedRange[];
   onDeleteEvent: (id: string) => void;
   onMarkDone: (id: string) => void;
   onExecuteRevision: (ev: CalendarEvent) => void;
+  onResizeEvent: (id: string, newDurationMinutes: number) => void;
 }
 
-export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEvent, onMarkDone, onExecuteRevision }: Props) {
+export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRanges, onDeleteEvent, onMarkDone, onExecuteRevision, onResizeEvent }: Props) {
   const today   = todayISO();
   const monday  = getMondayOfWeek(weekStart);
   const dates   = weekDates(monday);
@@ -155,6 +196,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
                 const isToday   = date === today;
                 const isPast    = date < today;
                 const dayEvents = eventsForDay(date);
+                const blocked   = blockedSpansForDay(blockedRanges, date);
                 const nowTop    = (() => {
                   if (!isToday) return null;
                   const now = new Date();
@@ -164,7 +206,14 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
                 })();
 
                 return (
-                  <DroppableCell key={date} date={date} isPast={isPast} isToday={isToday}>
+                  <DroppableCell
+                    key={date}
+                    date={date}
+                    isPast={isPast}
+                    isToday={isToday}
+                    blocked={blocked}
+                    dayEvents={dayEvents}
+                  >
                     {/* Hour lines */}
                     {Array.from({ length: HOURS_END - HOURS_START }, (_, i) => (
                       <div
@@ -199,6 +248,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
                           onDelete={onDeleteEvent}
                           onMarkDone={onMarkDone}
                           onExecuteRevision={onExecuteRevision}
+                          onResizeCommit={onResizeEvent}
                         />
                       );
                     })}
@@ -222,6 +272,15 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, onDeleteEv
                   <path d="M1 3 H17" stroke="var(--primary)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" opacity="0.6" />
                 </svg>
                 <span className="text-[10px] text-muted-foreground">Plan de révision</span>
+              </div>
+            )}
+            {blockedRanges.length > 0 && (
+              <div className="flex items-center gap-1" title="Plages non planifiables">
+                <div
+                  className="h-2 w-2 rounded-sm bg-muted"
+                  style={{ backgroundImage: "repeating-linear-gradient(-45deg, transparent 0 2px, var(--border) 2px 3px)" }}
+                />
+                <span className="text-[10px] text-muted-foreground">Plage bloquée</span>
               </div>
             )}
             <span className="ml-auto text-[10px] text-muted-foreground tabular-nums">
