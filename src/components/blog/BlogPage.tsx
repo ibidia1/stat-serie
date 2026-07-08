@@ -84,7 +84,21 @@ function formatShort(iso: string): string {
   );
 }
 
-/** Motif ECG décoratif posé sur les couvertures. */
+/** Grain photographique subtil (data-URI, aucune requête réseau). */
+const NOISE_URI =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")";
+
+function Grain() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-overlay"
+      style={{ backgroundImage: NOISE_URI }}
+    />
+  );
+}
+
+/** Motif ECG décoratif animé posé sur les couvertures. */
 function EcgMotif({ className = "" }: { className?: string }) {
   return (
     <svg
@@ -97,10 +111,12 @@ function EcgMotif({ className = "" }: { className?: string }) {
         d="M0 30 H90 l10 -14 12 28 12 -40 12 44 10 -18 h60 l10 -14 12 28 12 -40 12 44 10 -18 H400"
         fill="none"
         stroke="white"
-        strokeOpacity="0.22"
+        strokeOpacity="0.3"
         strokeWidth="2"
+        strokeDasharray="7 6"
         strokeLinejoin="round"
         strokeLinecap="round"
+        className="qe-chain-flow"
       />
     </svg>
   );
@@ -138,14 +154,23 @@ function CoverCard({
       className={`group relative overflow-hidden rounded-3xl text-left shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${FOCUS_RING} ${className}`}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${s.gradient}`} />
-      <EcgMotif className="top-1/3" />
+      <div aria-hidden className="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-white/25 blur-2xl" />
+      <div aria-hidden className="absolute -bottom-14 right-8 h-40 w-40 rounded-full bg-black/25 blur-3xl" />
+      <EcgMotif className="top-[30%]" />
       <span
         aria-hidden
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-6xl opacity-30 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-40"
+        className="pointer-events-none absolute -right-2 top-2 select-none font-mono text-[84px] font-black leading-none text-white/15"
+      >
+        {index.replace(/\s/g, "").slice(-1)}
+      </span>
+      <span
+        aria-hidden
+        className="absolute right-5 top-1/2 grid h-24 w-24 -translate-y-[60%] place-items-center rounded-full bg-white/15 text-6xl shadow-inner backdrop-blur-[2px] transition-transform duration-500 [filter:drop-shadow(0_10px_14px_rgba(0,0,0,0.3))] group-hover:-rotate-6 group-hover:scale-110"
       >
         {article.emoji}
       </span>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+      <Grain />
 
       <div className="absolute inset-x-3 top-3 flex items-center justify-between gap-2">
         <span className={GLASS_PILL}>{article.category}</span>
@@ -191,13 +216,18 @@ function ArticleCard({
     >
       <Card className="group flex h-full flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
         <button onClick={() => onOpen(article)} className={`flex h-full flex-col text-left ${FOCUS_RING}`}>
-          <div className={`relative flex h-32 items-center justify-center overflow-hidden bg-gradient-to-br ${s.gradient}`}>
-            <EcgMotif className="top-1/2" />
-            <span className="text-5xl drop-shadow transition-transform duration-500 group-hover:scale-110" aria-hidden>
+          <div className={`relative flex h-36 items-center justify-center overflow-hidden bg-gradient-to-br ${s.gradient}`}>
+            <div aria-hidden className="absolute -left-8 -top-10 h-28 w-28 rounded-full bg-white/25 blur-2xl" />
+            <EcgMotif className="top-[60%]" />
+            <span
+              aria-hidden
+              className="grid h-20 w-20 place-items-center rounded-full bg-white/15 text-5xl shadow-inner backdrop-blur-[2px] [filter:drop-shadow(0_8px_12px_rgba(0,0,0,0.3))] transition-transform duration-500 group-hover:-rotate-6 group-hover:scale-110"
+            >
               {article.emoji}
             </span>
             <span className={`absolute left-3 top-3 ${GLASS_PILL}`}>{article.category}</span>
             <span className={`absolute right-3 top-3 ${GLASS_PILL}`}>{formatShort(article.date)}</span>
+            <Grain />
           </div>
           <CardContent className="flex flex-1 flex-col p-4">
             <h3 className="mb-1.5 text-sm font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
@@ -282,7 +312,12 @@ export default function BlogPage() {
   const fs = CATEGORY_STYLES[featured.category];
 
   return (
-    <div className="space-y-8">
+    <div className="relative space-y-8">
+      {/* Halos d'ambiance */}
+      <div aria-hidden className="pointer-events-none absolute -top-20 left-[15%] -z-10 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute top-[30%] -right-16 -z-10 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 -z-10 h-72 w-72 rounded-full bg-success/10 blur-3xl" />
+
       {/* ══ Façade éditoriale ═══════════════════════ */}
       <motion.section
         initial={{ opacity: 0, y: 16 }}
@@ -302,13 +337,25 @@ export default function BlogPage() {
             className="absolute inset-0 opacity-[0.15]"
             style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "22px 22px" }}
           />
-          <EcgMotif className="top-[22%]" />
+          <div aria-hidden className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/25 blur-3xl" />
+          <div aria-hidden className="absolute bottom-1/4 right-0 h-72 w-72 translate-x-1/3 rounded-full bg-black/25 blur-3xl" />
+          <EcgMotif className="top-[20%]" />
           <span
             aria-hidden
-            className="absolute right-8 top-10 text-8xl drop-shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6"
+            className="pointer-events-none absolute left-5 bottom-[38%] select-none font-mono text-[110px] font-black leading-none text-white/10"
           >
-            {featured.emoji}
+            ★
           </span>
+          {/* Visuel vedette : emoji sur disque + orbite en rotation lente */}
+          <div aria-hidden className="absolute right-10 top-8 md:right-14 md:top-12">
+            <div className="qe-spin-slow absolute -inset-8 rounded-full border-2 border-dashed border-white/30" />
+            <div className="grid h-32 w-32 place-items-center rounded-full bg-white/15 shadow-inner backdrop-blur-[2px] md:h-36 md:w-36">
+              <span className="text-7xl [filter:drop-shadow(0_14px_18px_rgba(0,0,0,0.35))] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6 md:text-8xl">
+                {featured.emoji}
+              </span>
+            </div>
+          </div>
+          <Grain />
           <div className="absolute left-4 top-4 flex items-center gap-2">
             <span className={GLASS_PILL}>⭐ À la une</span>
             <span className={GLASS_PILL}>{featured.category}</span>
@@ -316,9 +363,12 @@ export default function BlogPage() {
 
           {/* Bloc titre découpé */}
           <div className="absolute bottom-0 left-0 max-w-[92%] rounded-tr-3xl bg-background p-5 pr-7 md:p-6 md:pr-9">
+            <p className="mb-1 text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">
+              Article vedette
+            </p>
             <h2 className="text-xl font-extrabold leading-tight tracking-tight text-foreground md:text-3xl">
               {featured.title.split(" : ")[0]}
-              <span className="block text-primary">
+              <span className="block bg-gradient-to-r from-primary to-[#7aa0ff] bg-clip-text text-transparent">
                 {featured.title.includes(" : ") ? featured.title.split(" : ")[1] : ""}
               </span>
             </h2>
@@ -337,21 +387,37 @@ export default function BlogPage() {
         </button>
 
         {/* Colonne droite : manifeste + 3ᵉ sélection */}
-        <div className="flex flex-col justify-between gap-3 lg:col-start-3 lg:row-start-1">
-          <div>
+        <div className="relative flex flex-col justify-between gap-3 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card to-primary/[0.06] p-5 shadow-sm lg:col-start-3 lg:row-start-1">
+          <div aria-hidden className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+          <div className="relative">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/[0.08] px-3 py-1 text-xs font-bold text-primary">
               <Newspaper className="h-3.5 w-3.5" aria-hidden />
               Le blog QE.tn
             </span>
-            <h1 className="mt-3 text-xl font-extrabold leading-tight tracking-tight text-foreground">
-              Apprendre à<br />mieux apprendre
+            <h1 className="mt-3 text-2xl font-extrabold leading-[1.1] tracking-tight text-foreground">
+              Apprendre à<br />
+              <span className="bg-gradient-to-r from-primary via-[#6b93ff] to-accent bg-clip-text text-transparent">
+                mieux apprendre
+              </span>
             </h1>
             <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
               Méthodologie, organisation, gestion du stress et actualités de la
-              plateforme — des guides pratiques écrits pour les étudiants en médecine.
+              plateforme — écrits pour les étudiants en médecine.
             </p>
+            <div className="mt-3 flex items-center gap-4 border-t border-border/70 pt-3">
+              {[
+                { n: BLOG_ARTICLES.length, label: "guides" },
+                { n: BLOG_CATEGORIES.length, label: "catégories" },
+                { n: ANNOUNCEMENTS.length, label: "annonces" },
+              ].map(({ n, label }) => (
+                <div key={label}>
+                  <p className="text-lg font-extrabold tabular-nums leading-none text-foreground">{n}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="relative flex items-center gap-2">
             <button
               onClick={() => {
                 searchRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -382,6 +448,32 @@ export default function BlogPage() {
         <CoverCard article={picks[0]} index="001" onOpen={setReading} className="min-h-[220px] lg:col-start-1 lg:row-start-1" />
         <CoverCard article={picks[1]} index="002" onOpen={setReading} className="min-h-[220px] lg:col-start-1 lg:row-start-2" />
       </motion.section>
+
+      {/* ══ Ticker d'annonces ═══════════════════════ */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.05 }}
+        className="relative overflow-hidden rounded-full bg-foreground py-2.5 text-background shadow-lg"
+        aria-hidden
+      >
+        <div className="qe-marquee flex w-max">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="flex shrink-0 items-center gap-10 pr-10">
+              {ANNOUNCEMENTS.map((an) => {
+                const s = ANNOUNCEMENT_STYLES[an.kind];
+                return (
+                  <span key={`${copy}-${an.id}`} className="flex items-center gap-2 whitespace-nowrap text-xs font-bold">
+                    <s.icon className="h-3.5 w-3.5" />
+                    {s.label} — {an.title}
+                    <span className="ml-6 text-background/40">✦</span>
+                  </span>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* ══ Barre recherche + filtres ═══════════════ */}
       <motion.section
