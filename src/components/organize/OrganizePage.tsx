@@ -13,8 +13,6 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import { OrganizeHeader } from "./header/OrganizeHeader";
 import { CalendarView } from "./calendar/CalendarView";
-import { BacklogPanel } from "./panels/BacklogPanel";
-import { TodayAgendaPanel } from "./panels/TodayAgendaPanel";
 import { AutoModeConfig } from "./panels/AutoModeConfig";
 import { CourseSearchModal } from "./search/CourseSearchModal";
 import { SeriesPickerPopover } from "./search/SeriesPickerPopover";
@@ -436,34 +434,19 @@ export function OrganizePage() {
 
       {/* Main content */}
       {mainTab === "calendar" && (
-        <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
-          {/* Calendar */}
-          <div>
-            <CalendarView
-              view={view}
-              events={state.events}
-              examDate={state.examDate}
-              blockedRanges={state.blockedRanges}
-              onDeleteEvent={handleDeleteEvent}
-              onMarkDone={handleMarkDone}
-              onMoveEvent={handleMoveEvent}
-              onExecuteRevision={handleExecuteRevision}
-              onResizeEvent={handleResizeEvent}
-              onBacklogDrop={handleBacklogDrop}
-              onReject={flashToast}
-            />
-          </div>
-
-          {/* Sidebar */}
-          <div className="flex flex-col gap-3">
-            <TodayAgendaPanel events={state.events} />
-            <BacklogPanel
-              items={state.backlog}
-              onRemove={actions.removeFromBacklog}
-              onAddClick={() => setAddTaskOpen(true)}
-            />
-          </div>
-        </div>
+        <CalendarView
+          view={view}
+          events={state.events}
+          examDate={state.examDate}
+          blockedRanges={state.blockedRanges}
+          onDeleteEvent={handleDeleteEvent}
+          onMarkDone={handleMarkDone}
+          onMoveEvent={handleMoveEvent}
+          onExecuteRevision={handleExecuteRevision}
+          onResizeEvent={handleResizeEvent}
+          onBacklogDrop={handleBacklogDrop}
+          onReject={flashToast}
+        />
       )}
 
       {mainTab === "macro" && (

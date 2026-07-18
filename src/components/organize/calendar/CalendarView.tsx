@@ -5,7 +5,11 @@ import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 import { DayView } from "./DayView";
 import { DragDropContext } from "./DragDropContext";
-import { getMondayOfWeek, todayISO, currentYearMonth } from "../lib/dateUtils";
+import { TimelineScrubber } from "./TimelineScrubber";
+import {
+  getMondayOfWeek, todayISO, currentYearMonth,
+  addDays, fromDate, nextYearMonth, prevYearMonth,
+} from "../lib/dateUtils";
 import { blockedSpansForDay } from "../lib/conflicts";
 import type { BacklogItem, BlockedRange, CalendarEvent } from "../data/types";
 
@@ -38,6 +42,23 @@ export function CalendarView({
     setDayDate(iso);
   }
 
+  // Navigation temporelle par le slider, selon la vue active.
+  function stepTime(delta: number) {
+    if (delta === 0) return;
+    if (view === "week") {
+      setWeekStart((w) => fromDate(addDays(getMondayOfWeek(w), delta * 7)));
+    } else if (view === "month") {
+      setYearMonth((ym) => {
+        let out = ym;
+        for (let i = 0; i < Math.abs(delta); i++) out = delta > 0 ? nextYearMonth(out) : prevYearMonth(out);
+        return out;
+      });
+    } else {
+      setDayDate((d) => fromDate(addDays(d, delta)));
+    }
+  }
+  const unitLabel = view === "week" ? "semaine" : view === "month" ? "mois" : "jour";
+
   return (
     <DragDropContext
       events={events}
@@ -46,6 +67,9 @@ export function CalendarView({
       onBacklogDrop={onBacklogDrop}
       onReject={onReject}
     >
+      <div className="mb-3">
+        <TimelineScrubber onStep={stepTime} unitLabel={unitLabel} />
+      </div>
       {view === "month" && (
         <MonthView
           yearMonth={yearMonth}
