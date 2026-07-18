@@ -152,15 +152,15 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
           </div>
 
           {/* Day headers */}
-          <div className="grid border-b border-border" style={{ gridTemplateColumns: "32px repeat(7, 1fr)" }}>
+          <div className="grid border-b border-border" style={{ gridTemplateColumns: "44px repeat(7, 1fr)" }}>
             <div />
             {dates.map((date) => {
               const { wd, day } = formatDayHeader(date);
               const isToday = date === today;
               return (
-                <div key={date} className={`py-1.5 text-center ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                  <div className="text-[9px] font-semibold uppercase tracking-wider">{wd}</div>
-                  <div className={`mx-auto mt-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[12px] font-bold tabular-nums ${
+                <div key={date} className={`py-2 text-center ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider">{wd}</div>
+                  <div className={`mx-auto mt-1 flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold tabular-nums ${
                     isToday ? "bg-primary text-primary-foreground" : ""
                   }`}>{day}</div>
                 </div>
@@ -169,8 +169,8 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
           </div>
 
           {/* Time grid */}
-          <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: "460px" }}>
-            <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: "32px repeat(7, 1fr)", height: `${GRID_HEIGHT}px` }}>
+          <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: "540px" }}>
+            <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: "44px repeat(7, 1fr)", height: `${GRID_HEIGHT}px` }}>
               {showLinks && (
                 <ChainConnectors
                   scope={gridRef}
@@ -183,8 +183,8 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                 {Array.from({ length: HOURS_END - HOURS_START }, (_, i) => (
                   <div
                     key={i}
-                    className="absolute right-1 text-[8px] tabular-nums text-muted-foreground/60 leading-none"
-                    style={{ top: `${i * PX_PER_HOUR - 4}px` }}
+                    className="absolute right-1.5 text-[11px] font-medium tabular-nums text-muted-foreground/70 leading-none"
+                    style={{ top: `${i * PX_PER_HOUR - 5}px` }}
                   >
                     {String(HOURS_START + i).padStart(2, "0")}h
                   </div>
@@ -238,7 +238,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                     {dayEvents.map((ev) => {
                       const startMin = timeToMinutes(ev.startTime) - HOURS_START * 60;
                       const top      = (startMin / 60) * PX_PER_HOUR;
-                      const height   = Math.max(18, (ev.durationMinutes / 60) * PX_PER_HOUR - 2);
+                      const height   = Math.max(30, (ev.durationMinutes / 60) * PX_PER_HOUR - 2);
                       return (
                         <EventCard
                           key={ev.id}

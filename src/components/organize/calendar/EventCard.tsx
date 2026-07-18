@@ -55,7 +55,7 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
     ...(style ?? {}),
     ...(transform ? { transform: CSS.Translate.toString(transform) } : {}),
     ...(previewDur !== null
-      ? { height: Math.max(18, (previewDur / 60) * PX_PER_HOUR - 2) }
+      ? { height: Math.max(30, (previewDur / 60) * PX_PER_HOUR - 2) }
       : {}),
   };
 
@@ -121,7 +121,7 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
       data-event-id={event.id}
       {...(draggable && !done ? listeners : {})}
       {...attributes}
-      className={`group absolute inset-x-0.5 z-[3] overflow-hidden rounded-md px-2 py-1 text-[10px] leading-snug select-none transition-shadow hover:shadow-lg hover:z-10
+      className={`group absolute inset-x-0.5 z-[3] overflow-hidden rounded-md px-2 py-1 text-xs leading-snug select-none transition-shadow hover:shadow-lg hover:z-10
         ${draggable && !done ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}
         ${isDragging ? "z-50 opacity-80 shadow-xl ring-2 ring-primary/40" : ""}
         ${colors.bg} ${colors.borderLeft}
@@ -132,19 +132,19 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
       onMouseLeave={() => setHovered(false)}
       title={`${event.title} — ${event.startTime} · ${minutesToDisplay(event.durationMinutes)}${draggable && !done ? " (glisser pour déplacer)" : ""}`}
     >
-      <div className={`flex items-center gap-1 font-semibold truncate ${colors.text}`}>
+      <div className={`flex items-center gap-1 text-[13px] font-semibold truncate ${colors.text}`}>
         {draggable && !done && (
-          <GripVertical className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" aria-hidden />
+          <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-60" aria-hidden />
         )}
-        <span className="shrink-0">{colors.icon}</span>
+        <span className="shrink-0 text-sm leading-none">{colors.icon}</span>
         <span className="truncate">{course?.shortTitle ?? course?.title}</span>
         {event.revisionInterval && (
-          <span className={`shrink-0 rounded px-1 text-[8px] font-bold ${colors.badgeBg}`}>
+          <span className={`shrink-0 rounded px-1 text-[10px] font-bold ${colors.badgeBg}`}>
             {event.revisionInterval}
           </span>
         )}
       </div>
-      <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground">
+      <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
         <span className="tabular-nums">{event.startTime}</span>
         <span>·</span>
         <span className={`tabular-nums ${previewDur !== null ? "font-bold text-primary" : ""}`}>
@@ -161,7 +161,7 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
               className="rounded bg-accent p-0.5 text-accent-foreground hover:bg-accent/80"
               title="Lancer"
             >
-              <Play className="h-2.5 w-2.5 fill-current" />
+              <Play className="h-3 w-3 fill-current" />
             </button>
           )}
           {event.type !== "revision_slot" && onMarkDone && (
@@ -171,7 +171,7 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
               className="rounded bg-success p-0.5 text-success-foreground hover:bg-success/80"
               title="Marquer fait"
             >
-              <Play className="h-2.5 w-2.5 fill-current" />
+              <Play className="h-3 w-3 fill-current" />
             </button>
           )}
           {onEdit && (
@@ -181,7 +181,7 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
               className="rounded bg-muted p-0.5 text-muted-foreground hover:bg-muted/80"
               title="Modifier"
             >
-              <Edit2 className="h-2.5 w-2.5" />
+              <Edit2 className="h-3 w-3" />
             </button>
           )}
           {onDelete && (
@@ -191,7 +191,7 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
               className="rounded bg-destructive/[0.08] p-0.5 text-destructive hover:bg-destructive/[0.14]"
               title="Supprimer"
             >
-              <Trash2 className="h-2.5 w-2.5" />
+              <Trash2 className="h-3 w-3" />
             </button>
           )}
         </div>

@@ -59,11 +59,11 @@ function DraggableChip({ ev, c }: { ev: CalendarEvent; c: EventColorSet }) {
       onClick={(e) => e.stopPropagation()}
       title={`${ev.title} — ${ev.startTime}${done ? "" : " (glisser pour déplacer)"}`}
       style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
-      className={`relative z-[3] truncate rounded px-1 py-0.5 text-[9px] font-medium ${c.bg} ${c.text}
+      className={`relative z-[3] truncate rounded px-1.5 py-1 text-[11px] font-medium ${c.bg} ${c.text}
         ${done ? "" : "cursor-grab active:cursor-grabbing"}
         ${isDragging ? "opacity-70 ring-1 ring-primary/40" : ""}`}
     >
-      {c.icon} {ev.title.replace(/^[^\s]+ /, "").slice(0, 18)}
+      {c.icon} {ev.title.replace(/^[^\s]+ /, "").slice(0, 20)}
     </div>
   );
 }
@@ -143,7 +143,7 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
               />
             )}
             {days.map((iso, idx) => {
-              if (!iso) return <div key={`empty-${idx}`} className="border-b border-r border-border/50 min-h-[80px]" />;
+              if (!iso) return <div key={`empty-${idx}`} className="border-b border-r border-border/50 min-h-[104px]" />;
               const dayEvents = eventsForDay(iso);
               const isToday   = iso === today;
               const isPast    = iso < today;
@@ -157,23 +157,23 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
                   iso={iso}
                   isPast={isPast}
                   onClick={() => onDayClick(iso)}
-                  className={`min-h-[80px] cursor-pointer border-b border-r border-border/50 p-1 transition-colors hover:bg-muted/40 ${
+                  className={`min-h-[104px] cursor-pointer border-b border-r border-border/50 p-1.5 transition-colors hover:bg-muted/40 ${
                     isPast ? "opacity-60" : ""
                   }`}
                 >
-                  <div className={`mb-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold tabular-nums ${
+                  <div className={`mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold tabular-nums ${
                     isToday
                       ? "bg-primary text-primary-foreground ring-2 ring-primary"
                       : "text-foreground"
                   }`}>
                     {day}
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {visible.map((ev) => (
                       <DraggableChip key={ev.id} ev={ev} c={EVENT_COLORS[ev.type]} />
                     ))}
                     {extra > 0 && (
-                      <div className="text-[9px] text-muted-foreground">+{extra} de plus</div>
+                      <div className="text-[10px] font-medium text-muted-foreground">+{extra} de plus</div>
                     )}
                   </div>
                 </DroppableDay>
