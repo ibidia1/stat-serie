@@ -40,11 +40,12 @@ function DroppableDay({
 }
 
 function DraggableChip({
-  ev, c, onSelect, selected, dimmed,
+  ev, c, onSelect, onOpenActions, selected, dimmed,
 }: {
   ev: CalendarEvent;
   c: EventColorSet;
   onSelect?: (ev: CalendarEvent) => void;
+  onOpenActions?: (ev: CalendarEvent, rect: DOMRect) => void;
   selected?: boolean;
   dimmed?: boolean;
 }) {
@@ -65,7 +66,13 @@ function DraggableChip({
       data-event-id={ev.id}
       {...(done ? {} : listeners)}
       {...attributes}
-      onClick={(e) => { e.stopPropagation(); onSelect?.(ev); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect?.(ev);
+        if (onOpenActions && ev.type !== "revision_slot" && !done) {
+          onOpenActions(ev, (e.currentTarget as HTMLElement).getBoundingClientRect());
+        }
+      }}
       title={`${ev.title} — ${ev.startTime}${done ? "" : " (glisser pour déplacer)"}`}
       style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
       className={`relative z-[3] truncate rounded px-1.5 py-1 text-[11px] font-medium transition-all ${c.bg} ${c.text}
@@ -84,9 +91,10 @@ interface Props {
   onYearMonthChange: (ym: string) => void;
   events: CalendarEvent[];
   onDayClick: (iso: string) => void;
+  onOpenActions: (event: CalendarEvent, rect: DOMRect) => void;
 }
 
-export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: Props) {
+export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick, onOpenActions }: Props) {
   const days  = monthCalendarDays(yearMonth);
   const today = todayISO();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -197,6 +205,7 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
                         ev={ev}
                         c={EVENT_COLORS[ev.type]}
                         onSelect={handleSelectEvent}
+                        onOpenActions={onOpenActions}
                         selected={selecting && chainKey(ev) === selectedKey}
                         dimmed={selecting && chainKey(ev) !== selectedKey}
                       />

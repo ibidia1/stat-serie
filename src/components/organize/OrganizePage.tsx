@@ -13,6 +13,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 import { OrganizeHeader } from "./header/OrganizeHeader";
 import { CalendarView } from "./calendar/CalendarView";
+import { EventActionPopover, type ActionAnchor } from "./calendar/EventActionPopover";
 import { AutoModeConfig } from "./panels/AutoModeConfig";
 import { CourseSearchModal } from "./search/CourseSearchModal";
 import { SeriesPickerPopover } from "./search/SeriesPickerPopover";
@@ -29,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import type { CalendarEvent, Course, EventType } from "./data/types";
 import { getSeriesForCourse } from "./data/series";
 import { estimateDuration } from "./hooks/useEstimation";
-import { minutesToDisplay, timeToMinutes, minutesToHHMM, formatShortDate, todayISO } from "./lib/dateUtils";
+import { minutesToDisplay, timeToMinutes, minutesToHHMM, formatShortDate, todayISO, addDays, toDate, fromDate } from "./lib/dateUtils";
 import { findFreeSlot, findConflict, findBlocked, blockedSpansForDay } from "./lib/conflicts";
 import { COURSES } from "./data/courses";
 import { BlockedRangesDialog } from "./modals/BlockedRangesDialog";
@@ -58,6 +59,7 @@ export function OrganizePage() {
   const [templateOpen,     setTemplateOpen]     = useState(false);
   const [executeEvent,     setExecuteEvent]     = useState<CalendarEvent | null>(null);
   const [blockedOpen,      setBlockedOpen]      = useState(false);
+  const [actionAnchor,     setActionAnchor]     = useState<ActionAnchor | null>(null);
   const [toast,            setToast]            = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -334,6 +336,33 @@ export function OrganizePage() {
     setExecuteEvent(ev);
   }
 
+  // Crée une révision liée à un cours, `days` jours après, sans chevauchement.
+  function handleCreateRevision(parent: CalendarEvent, days: number) {
+    const course = COURSES.find((c) => c.id === parent.courseId);
+    const shortName = course?.shortTitle ?? course?.title ?? `Cours #${parent.courseId}`;
+    const revDate = fromDate(addDays(toDate(parent.startDate), days));
+    const created = placeAndAddEvent({
+      type: "revision_slot",
+      courseId: parent.courseId,
+      seriesId: parent.seriesId,
+      title: `🔁 Révision J${days} – ${shortName}`,
+      startDate: revDate,
+      startTime: state.autoMode.preferredHour,
+      durationMinutes: parent.durationMinutes,
+      estimatedFromKpi: parent.estimatedFromKpi,
+      isRevision: true,
+      revisionInterval: `J${days}`,
+      parentEventId: parent.id,
+      status: "upcoming",
+    });
+    if (created) {
+      showToast(`Révision J${days} de « ${shortName} » créée le ${formatShortDate(revDate)}.`, {
+        kind: "success",
+        action: { label: "Annuler", fn: () => actions.deleteEvent(created.id) },
+      });
+    }
+  }
+
   function handleLaunchRevision(eventId: string, type: EventType, seriesId?: string) {
     actions.markDone(eventId);
     const ev = state.events.find((e) => e.id === eventId);
@@ -434,19 +463,31 @@ export function OrganizePage() {
 
       {/* Main content */}
       {mainTab === "calendar" && (
-        <CalendarView
-          view={view}
-          events={state.events}
-          examDate={state.examDate}
-          blockedRanges={state.blockedRanges}
-          onDeleteEvent={handleDeleteEvent}
-          onMarkDone={handleMarkDone}
-          onMoveEvent={handleMoveEvent}
-          onExecuteRevision={handleExecuteRevision}
-          onResizeEvent={handleResizeEvent}
-          onBacklogDrop={handleBacklogDrop}
-          onReject={flashToast}
-        />
+        <div className="relative">
+          <CalendarView
+            view={view}
+            events={state.events}
+            examDate={state.examDate}
+            blockedRanges={state.blockedRanges}
+            onDeleteEvent={handleDeleteEvent}
+            onMarkDone={handleMarkDone}
+            onMoveEvent={handleMoveEvent}
+            onExecuteRevision={handleExecuteRevision}
+            onResizeEvent={handleResizeEvent}
+            onBacklogDrop={handleBacklogDrop}
+            onOpenActions={(event, rect) => setActionAnchor({ event, rect })}
+            onReject={flashToast}
+          />
+          {/* Bouton + : ajouter un cours */}
+          <button
+            onClick={() => setAddTaskOpen(true)}
+            title="Ajouter un cours (N)"
+            aria-label="Ajouter un cours"
+            className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 transition-transform hover:scale-105 active:scale-95"
+          >
+            <Plus className="h-6 w-6" />
+          </button>
+        </div>
       )}
 
       {mainTab === "macro" && (
@@ -522,6 +563,15 @@ export function OrganizePage() {
         events={state.events}
         onMarkSkipped={actions.deleteEvent}
       />
+
+      {/* Menu d'actions d'un cours (créer une révision liée) */}
+      {actionAnchor && (
+        <EventActionPopover
+          anchor={actionAnchor}
+          onClose={() => setActionAnchor(null)}
+          onCreateRevision={handleCreateRevision}
+        />
+      )}
 
       {/* Plages bloquées */}
       <BlockedRangesDialog

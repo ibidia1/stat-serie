@@ -23,6 +23,8 @@ interface Props {
   onResizeCommit?: (id: string, newDurationMinutes: number) => void;
   /** Sélection d'un cours pour afficher sa chaîne de révisions. */
   onSelect?: (event: CalendarEvent) => void;
+  /** Ouvre le menu d'actions (créer une révision liée…) pour un cours. */
+  onOpenActions?: (event: CalendarEvent, rect: DOMRect) => void;
   /** Appartient à la chaîne sélectionnée. */
   selected?: boolean;
   /** Une autre chaîne est sélectionnée : cette carte est estompée. */
@@ -30,7 +32,7 @@ interface Props {
   style?: React.CSSProperties;
 }
 
-export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onEdit, onExecuteRevision, onResizeCommit, onSelect, selected, dimmed, style }: Props) {
+export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onEdit, onExecuteRevision, onResizeCommit, onSelect, onOpenActions, selected, dimmed, style }: Props) {
   const [hovered, setHovered] = useState(false);
   const [previewDur, setPreviewDur] = useState<number | null>(null);
   const resizeStart = useRef<{ y: number; dur: number } | null>(null);
@@ -136,7 +138,13 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
         ${selected ? "z-10 shadow-lg ring-2 ring-primary/50" : ""}
         ${overdue ? "ring-1 ring-destructive" : ""}
       `}
-      onClick={onSelect ? (e) => { e.stopPropagation(); onSelect(event); } : undefined}
+      onClick={onSelect || onOpenActions ? (e) => {
+        e.stopPropagation();
+        onSelect?.(event);
+        if (onOpenActions && event.type !== "revision_slot" && event.status !== "done") {
+          onOpenActions(event, (e.currentTarget as HTMLElement).getBoundingClientRect());
+        }
+      } : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       title={`${event.title} — ${event.startTime} · ${minutesToDisplay(event.durationMinutes)}${draggable && !done ? " (glisser pour déplacer)" : ""}`}

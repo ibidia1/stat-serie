@@ -89,9 +89,10 @@ interface Props {
   onMarkDone: (id: string) => void;
   onExecuteRevision: (ev: CalendarEvent) => void;
   onResizeEvent: (id: string, newDurationMinutes: number) => void;
+  onOpenActions: (event: CalendarEvent, rect: DOMRect) => void;
 }
 
-export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRanges, onDeleteEvent, onMarkDone, onExecuteRevision, onResizeEvent }: Props) {
+export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRanges, onDeleteEvent, onMarkDone, onExecuteRevision, onResizeEvent, onOpenActions }: Props) {
   const today   = todayISO();
   const monday  = getMondayOfWeek(weekStart);
   const dates   = weekDates(monday);
@@ -272,6 +273,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                           onExecuteRevision={onExecuteRevision}
                           onResizeCommit={onResizeEvent}
                           onSelect={handleSelectEvent}
+                          onOpenActions={onOpenActions}
                           selected={selecting && chainKey(ev) === selectedKey}
                           dimmed={selecting && chainKey(ev) !== selectedKey}
                         />
