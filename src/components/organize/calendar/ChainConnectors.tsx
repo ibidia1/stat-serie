@@ -23,6 +23,10 @@ interface Props {
   events: CalendarEvent[];
   /** Bump this whenever the layout changes (view switch, week/month navigation). */
   recomputeKey: string | number;
+  /** Clé du plan sélectionné : seule sa chaîne est tracée. */
+  selectedKey?: string | null;
+  /** Tracer toutes les chaînes (mode « tout afficher »), ignore selectedKey. */
+  showAll?: boolean;
 }
 
 /**
@@ -31,7 +35,7 @@ interface Props {
  * (`[data-event-id]` nodes) so the overlay stays accurate regardless of how
  * each view lays its events out.
  */
-export function ChainConnectors({ scope, events, recomputeKey }: Props) {
+export function ChainConnectors({ scope, events, recomputeKey, selectedKey = null, showAll = false }: Props) {
   const [segments, setSegments] = useState<Segment[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -56,6 +60,8 @@ export function ChainConnectors({ scope, events, recomputeKey }: Props) {
       const segs: Segment[] = [];
       const nds: Node[] = [];
       for (const chain of buildChains(events)) {
+        // N'afficher que la chaîne sélectionnée, sauf en mode « tout afficher ».
+        if (!showAll && chain.key !== selectedKey) continue;
         const color = CHAIN_COLORS[chain.colorIndex];
         const points = chain.members
           .map((m) => ({ m, p: pos.get(m.id) }))
@@ -92,7 +98,7 @@ export function ChainConnectors({ scope, events, recomputeKey }: Props) {
       ro.disconnect();
       window.removeEventListener("resize", compute);
     };
-  }, [scope, events, recomputeKey]);
+  }, [scope, events, recomputeKey, selectedKey, showAll]);
 
   if (segments.length === 0) return null;
 

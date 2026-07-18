@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Link2, Link2Off } from "lucide-react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
@@ -8,6 +8,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { monthCalendarDays, yearMonthLabel, nextYearMonth, prevYearMonth, currentYearMonth, formatDayHeader, todayISO } from "../lib/dateUtils";
 import { EVENT_COLORS, type EventColorSet } from "../lib/colors";
 import { ChainConnectors } from "./ChainConnectors";
+import { buildChains, chainKey } from "../lib/chains";
 import type { CalendarEvent } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -38,7 +39,15 @@ function DroppableDay({
   );
 }
 
-function DraggableChip({ ev, c }: { ev: CalendarEvent; c: EventColorSet }) {
+function DraggableChip({
+  ev, c, onSelect, selected, dimmed,
+}: {
+  ev: CalendarEvent;
+  c: EventColorSet;
+  onSelect?: (ev: CalendarEvent) => void;
+  selected?: boolean;
+  dimmed?: boolean;
+}) {
   const done = ev.status === "done";
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: ev.id,
@@ -56,11 +65,13 @@ function DraggableChip({ ev, c }: { ev: CalendarEvent; c: EventColorSet }) {
       data-event-id={ev.id}
       {...(done ? {} : listeners)}
       {...attributes}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(e) => { e.stopPropagation(); onSelect?.(ev); }}
       title={`${ev.title} — ${ev.startTime}${done ? "" : " (glisser pour déplacer)"}`}
       style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
-      className={`relative z-[3] truncate rounded px-1.5 py-1 text-[11px] font-medium ${c.bg} ${c.text}
+      className={`relative z-[3] truncate rounded px-1.5 py-1 text-[11px] font-medium transition-all ${c.bg} ${c.text}
         ${done ? "" : "cursor-grab active:cursor-grabbing"}
+        ${dimmed && !isDragging ? "opacity-30" : ""}
+        ${selected ? "z-10 ring-2 ring-primary/50" : ""}
         ${isDragging ? "opacity-70 ring-1 ring-primary/40" : ""}`}
     >
       {c.icon} {ev.title.replace(/^[^\s]+ /, "").slice(0, 20)}
@@ -79,11 +90,22 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
   const days  = monthCalendarDays(yearMonth);
   const today = todayISO();
   const gridRef = useRef<HTMLDivElement>(null);
-  const [showLinks, setShowLinks] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   function eventsForDay(iso: string) {
     return events.filter((e) => e.startDate === iso).sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
+
+  const linkableKeys = useMemo(
+    () => new Set(buildChains(events).map((c) => c.key)),
+    [events],
+  );
+  function handleSelectEvent(ev: CalendarEvent) {
+    const k = chainKey(ev);
+    setSelectedKey((prev) => (linkableKeys.has(k) && prev !== k ? k : null));
+  }
+  const selecting = selectedKey !== null && !showAll;
 
   return (
     <motion.div
@@ -102,15 +124,15 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setShowLinks((v) => !v)}
-                title={showLinks ? "Masquer les liens de révision" : "Afficher les liens de révision"}
-                aria-label="Liens de révision espacée"
-                aria-pressed={showLinks}
+                onClick={() => { setShowAll((v) => !v); setSelectedKey(null); }}
+                title={showAll ? "Afficher les liens seulement au clic sur un cours" : "Afficher tous les liens de révision"}
+                aria-label="Afficher tous les liens de révision"
+                aria-pressed={showAll}
                 className={`rounded p-1 transition-colors hover:bg-muted ${
-                  showLinks ? "text-primary" : "text-muted-foreground"
+                  showAll ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                {showLinks ? <Link2 className="h-4 w-4" /> : <Link2Off className="h-4 w-4" />}
+                {showAll ? <Link2 className="h-4 w-4" /> : <Link2Off className="h-4 w-4" />}
               </button>
               <button
                 onClick={() => onYearMonthChange(currentYearMonth())}
@@ -134,14 +156,14 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
           </div>
 
           {/* Days grid */}
-          <div ref={gridRef} className="relative grid grid-cols-7">
-            {showLinks && (
-              <ChainConnectors
-                scope={gridRef}
-                events={events}
-                recomputeKey={`${yearMonth}-${events.length}`}
-              />
-            )}
+          <div ref={gridRef} className="relative grid grid-cols-7" onClick={() => setSelectedKey(null)}>
+            <ChainConnectors
+              scope={gridRef}
+              events={events}
+              recomputeKey={`${yearMonth}-${events.length}-${selectedKey ?? ""}-${showAll}`}
+              selectedKey={selectedKey}
+              showAll={showAll}
+            />
             {days.map((iso, idx) => {
               if (!iso) return <div key={`empty-${idx}`} className="border-b border-r border-border/50 min-h-[104px]" />;
               const dayEvents = eventsForDay(iso);
@@ -170,7 +192,14 @@ export function MonthView({ yearMonth, onYearMonthChange, events, onDayClick }: 
                   </div>
                   <div className="space-y-1">
                     {visible.map((ev) => (
-                      <DraggableChip key={ev.id} ev={ev} c={EVENT_COLORS[ev.type]} />
+                      <DraggableChip
+                        key={ev.id}
+                        ev={ev}
+                        c={EVENT_COLORS[ev.type]}
+                        onSelect={handleSelectEvent}
+                        selected={selecting && chainKey(ev) === selectedKey}
+                        dimmed={selecting && chainKey(ev) !== selectedKey}
+                      />
                     ))}
                     {extra > 0 && (
                       <div className="text-[10px] font-medium text-muted-foreground">+{extra} de plus</div>

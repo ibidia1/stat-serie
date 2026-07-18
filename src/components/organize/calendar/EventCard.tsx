@@ -21,10 +21,16 @@ interface Props {
   onExecuteRevision?: (event: CalendarEvent) => void;
   /** Redimensionnement de la durée par la poignée du bas (vue Semaine). */
   onResizeCommit?: (id: string, newDurationMinutes: number) => void;
+  /** Sélection d'un cours pour afficher sa chaîne de révisions. */
+  onSelect?: (event: CalendarEvent) => void;
+  /** Appartient à la chaîne sélectionnée. */
+  selected?: boolean;
+  /** Une autre chaîne est sélectionnée : cette carte est estompée. */
+  dimmed?: boolean;
   style?: React.CSSProperties;
 }
 
-export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onEdit, onExecuteRevision, onResizeCommit, style }: Props) {
+export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onEdit, onExecuteRevision, onResizeCommit, onSelect, selected, dimmed, style }: Props) {
   const [hovered, setHovered] = useState(false);
   const [previewDur, setPreviewDur] = useState<number | null>(null);
   const resizeStart = useRef<{ y: number; dur: number } | null>(null);
@@ -121,13 +127,16 @@ export function EventCard({ event, compact, draggable, onDelete, onMarkDone, onE
       data-event-id={event.id}
       {...(draggable && !done ? listeners : {})}
       {...attributes}
-      className={`group absolute inset-x-0.5 z-[3] overflow-hidden rounded-md px-2 py-1 text-xs leading-snug select-none transition-shadow hover:shadow-lg hover:z-10
+      className={`group absolute inset-x-0.5 z-[3] overflow-hidden rounded-md px-2 py-1 text-xs leading-snug select-none transition-all hover:shadow-lg hover:z-10
         ${draggable && !done ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}
         ${isDragging ? "z-50 opacity-80 shadow-xl ring-2 ring-primary/40" : ""}
         ${colors.bg} ${colors.borderLeft}
         ${done    ? "opacity-55" : ""}
+        ${dimmed && !isDragging ? "opacity-35" : ""}
+        ${selected ? "z-10 shadow-lg ring-2 ring-primary/50" : ""}
         ${overdue ? "ring-1 ring-destructive" : ""}
       `}
+      onClick={onSelect ? (e) => { e.stopPropagation(); onSelect(event); } : undefined}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       title={`${event.title} — ${event.startTime} · ${minutesToDisplay(event.durationMinutes)}${draggable && !done ? " (glisser pour déplacer)" : ""}`}

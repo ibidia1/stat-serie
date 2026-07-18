@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useRef, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Printer, Link2, Link2Off } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
@@ -10,6 +10,7 @@ import {
 } from "../lib/dateUtils";
 import { EventCard } from "./EventCard";
 import { ChainConnectors } from "./ChainConnectors";
+import { buildChains, chainKey } from "../lib/chains";
 import { DragHintContext } from "./DragDropContext";
 import { blockedSpansForDay, freeIntervals, type BlockedSpan } from "../lib/conflicts";
 import type { CalendarEvent, BlockedRange } from "../data/types";
@@ -97,11 +98,27 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
   const label   = formatWeekLabel(monday);
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridRef   = useRef<HTMLDivElement>(null);
-  const [showLinks, setShowLinks] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   function eventsForDay(date: string) {
     return events.filter((e) => e.startDate === date).sort((a, b) => a.startTime.localeCompare(b.startTime));
   }
+
+  // Clés des plans de révision réellement traçables cette semaine (≥ 2 séances liées).
+  const weekEvents = events.filter((e) => dates.includes(e.startDate));
+  const linkableKeys = useMemo(
+    () => new Set(buildChains(weekEvents).map((c) => c.key)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [monday, events],
+  );
+
+  function handleSelectEvent(ev: CalendarEvent) {
+    const k = chainKey(ev);
+    setSelectedKey((prev) => (linkableKeys.has(k) && prev !== k ? k : null));
+  }
+
+  const selecting = selectedKey !== null && !showAll;
 
   return (
     <motion.div
@@ -125,15 +142,15 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setShowLinks((v) => !v)}
-                title={showLinks ? "Masquer les liens de révision" : "Afficher les liens de révision"}
-                aria-label="Liens de révision espacée"
-                aria-pressed={showLinks}
+                onClick={() => { setShowAll((v) => !v); setSelectedKey(null); }}
+                title={showAll ? "Afficher les liens seulement au clic sur un cours" : "Afficher tous les liens de révision"}
+                aria-label="Afficher tous les liens de révision"
+                aria-pressed={showAll}
                 className={`no-print rounded p-1 transition-colors hover:bg-muted ${
-                  showLinks ? "text-primary" : "text-muted-foreground"
+                  showAll ? "text-primary" : "text-muted-foreground"
                 }`}
               >
-                {showLinks ? <Link2 className="h-3.5 w-3.5" /> : <Link2Off className="h-3.5 w-3.5" />}
+                {showAll ? <Link2 className="h-3.5 w-3.5" /> : <Link2Off className="h-3.5 w-3.5" />}
               </button>
               <button
                 onClick={() => onWeekChange(getMondayOfWeek(todayISO()))}
@@ -170,14 +187,19 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
 
           {/* Time grid */}
           <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: "540px" }}>
-            <div ref={gridRef} className="relative grid" style={{ gridTemplateColumns: "44px repeat(7, 1fr)", height: `${GRID_HEIGHT}px` }}>
-              {showLinks && (
-                <ChainConnectors
-                  scope={gridRef}
-                  events={events.filter((e) => dates.includes(e.startDate))}
-                  recomputeKey={`${monday}-${events.length}`}
-                />
-              )}
+            <div
+              ref={gridRef}
+              className="relative grid"
+              style={{ gridTemplateColumns: "44px repeat(7, 1fr)", height: `${GRID_HEIGHT}px` }}
+              onClick={() => setSelectedKey(null)}
+            >
+              <ChainConnectors
+                scope={gridRef}
+                events={weekEvents}
+                recomputeKey={`${monday}-${events.length}-${selectedKey ?? ""}-${showAll}`}
+                selectedKey={selectedKey}
+                showAll={showAll}
+              />
               {/* Hour labels */}
               <div className="relative">
                 {Array.from({ length: HOURS_END - HOURS_START }, (_, i) => (
@@ -249,6 +271,9 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                           onMarkDone={onMarkDone}
                           onExecuteRevision={onExecuteRevision}
                           onResizeCommit={onResizeEvent}
+                          onSelect={handleSelectEvent}
+                          selected={selecting && chainKey(ev) === selectedKey}
+                          dimmed={selecting && chainKey(ev) !== selectedKey}
                         />
                       );
                     })}
@@ -266,14 +291,14 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                 <span className="text-[10px] text-muted-foreground">{label}</span>
               </div>
             ))}
-            {showLinks && (
-              <div className="flex items-center gap-1" title="Lignes reliant un cours à ses révisions J2/J7/J10/J30">
-                <svg width="18" height="6" aria-hidden>
-                  <path d="M1 3 H17" stroke="var(--primary)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" opacity="0.6" />
-                </svg>
-                <span className="text-[10px] text-muted-foreground">Plan de révision</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1" title="Clique sur un cours pour relier ses révisions J2/J7/J10/J30">
+              <svg width="18" height="6" aria-hidden>
+                <path d="M1 3 H17" stroke="var(--primary)" strokeWidth="2" strokeDasharray="4 3" strokeLinecap="round" opacity="0.6" />
+              </svg>
+              <span className="text-[10px] text-muted-foreground">
+                {showAll ? "Plan de révision" : "Clique un cours → ses révisions"}
+              </span>
+            </div>
             {blockedRanges.length > 0 && (
               <div className="flex items-center gap-1" title="Plages non planifiables">
                 <div
