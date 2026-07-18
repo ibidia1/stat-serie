@@ -50,7 +50,8 @@ export function CalendarView({
   function stepTime(delta: number) {
     if (delta === 0) return;
     if (view === "week") {
-      setWeekStart((w) => fromDate(addDays(getMondayOfWeek(w), delta * 7)));
+      // Fenêtre glissante : on décale de `delta` semaines en gardant le jour de début.
+      setWeekStart((w) => fromDate(addDays(w, delta * 7)));
     } else if (view === "month") {
       setYearMonth((ym) => {
         let out = ym;

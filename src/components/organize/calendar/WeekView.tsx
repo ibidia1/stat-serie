@@ -2,10 +2,10 @@
 
 import { useContext, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, Printer, Link2, Link2Off } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Printer, Link2, Link2Off } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
-  getMondayOfWeek, weekDates, formatWeekLabel, formatDayHeader,
+  getMondayOfWeek, windowDates, windowLabel, formatDayHeader,
   todayISO, timeToMinutes, minutesToDisplay, addDays, fromDate
 } from "../lib/dateUtils";
 import { EventCard } from "./EventCard";
@@ -94,9 +94,10 @@ interface Props {
 
 export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRanges, onDeleteEvent, onMarkDone, onExecuteRevision, onResizeEvent, onOpenActions }: Props) {
   const today   = todayISO();
-  const monday  = getMondayOfWeek(weekStart);
-  const dates   = weekDates(monday);
-  const label   = formatWeekLabel(monday);
+  // Fenêtre glissante de 7 jours démarrant à `weekStart` (pas de calage sur lundi).
+  const start   = weekStart;
+  const dates   = windowDates(start);
+  const label   = windowLabel(start);
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridRef   = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
@@ -111,7 +112,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
   const linkableKeys = useMemo(
     () => new Set(buildChains(weekEvents).map((c) => c.key)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [monday, events],
+    [start, events],
   );
 
   function handleSelectEvent(ev: CalendarEvent) {
@@ -132,11 +133,17 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
           {/* Nav bar */}
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <div className="flex items-center gap-0.5">
-              <button onClick={() => onWeekChange(fromDate(addDays(monday, -7)))} className="rounded p-1 text-muted-foreground hover:bg-muted">
+              <button onClick={() => onWeekChange(fromDate(addDays(start, -7)))} title="Semaine précédente" className="rounded p-1 text-muted-foreground hover:bg-muted">
+                <ChevronsLeft className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => onWeekChange(fromDate(addDays(start, -1)))} title="Jour précédent" className="rounded p-1 text-muted-foreground hover:bg-muted">
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
-              <button onClick={() => onWeekChange(fromDate(addDays(monday, 7)))} className="rounded p-1 text-muted-foreground hover:bg-muted">
+              <button onClick={() => onWeekChange(fromDate(addDays(start, 1)))} title="Jour suivant" className="rounded p-1 text-muted-foreground hover:bg-muted">
                 <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+              <button onClick={() => onWeekChange(fromDate(addDays(start, 7)))} title="Semaine suivante" className="rounded p-1 text-muted-foreground hover:bg-muted">
+                <ChevronsRight className="h-3.5 w-3.5" />
               </button>
             </div>
             <p className="text-xs font-semibold tabular-nums capitalize">{label}</p>
@@ -197,7 +204,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
               <ChainConnectors
                 scope={gridRef}
                 events={weekEvents}
-                recomputeKey={`${monday}-${events.length}-${selectedKey ?? ""}-${showAll}`}
+                recomputeKey={`${start}-${events.length}-${selectedKey ?? ""}-${showAll}`}
                 selectedKey={selectedKey}
                 showAll={showAll}
               />

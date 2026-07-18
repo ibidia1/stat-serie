@@ -66,6 +66,18 @@ export function formatWeekLabel(mondayIso: string): string {
   return `${sm} – ${em}`;
 }
 
+/** Fenêtre glissante de `length` jours à partir de `startIso` (jour de début libre). */
+export function windowDates(startIso: string, length = 7): string[] {
+  const s = parseISO(startIso);
+  return Array.from({ length }, (_, i) => fromDate(addDays(s, i)));
+}
+
+export function windowLabel(startIso: string, length = 7): string {
+  const s = parseISO(startIso);
+  const e = addDays(s, length - 1);
+  return `${format(s, "d MMM", { locale: fr })} – ${format(e, "d MMM", { locale: fr })}`;
+}
+
 export function formatDayHeader(iso: string): { wd: string; day: string } {
   const d = parseISO(iso);
   return {
