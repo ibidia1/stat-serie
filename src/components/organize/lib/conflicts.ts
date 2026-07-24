@@ -1,10 +1,44 @@
-import type { CalendarEvent } from "../data/types";
+import type { CalendarEvent, BlockedRange } from "../data/types";
 import { timeToMinutes } from "./dateUtils";
 import { DAY_START_MIN, DAY_END_MIN, SNAP_MINUTES } from "../calendar/gridConstants";
 
 export interface Range {
   start: number; // minutes from midnight
   end: number;
+}
+
+export interface BlockedSpan extends Range {
+  label: string;
+}
+
+/** Index de jour lundi-first (0 = lundi … 6 = dimanche). */
+export function dayIndexOf(dateISO: string): number {
+  return (new Date(dateISO + "T00:00:00").getDay() + 6) % 7;
+}
+
+/** Plages bloquées applicables à une date donnée, en minutes depuis minuit. */
+export function blockedSpansForDay(ranges: BlockedRange[], dateISO: string): BlockedSpan[] {
+  const dow = dayIndexOf(dateISO);
+  return ranges
+    .filter((r) => r.days.includes(dow))
+    .map((r) => ({
+      start: timeToMinutes(r.startTime),
+      end: timeToMinutes(r.endTime),
+      label: r.label,
+    }));
+}
+
+/** Première plage bloquée chevauchant [startMin, startMin + durationMin). */
+export function findBlocked(
+  spans: BlockedSpan[],
+  startMin: number,
+  durationMin: number,
+): BlockedSpan | null {
+  const candidate: Range = { start: startMin, end: startMin + durationMin };
+  for (const s of spans) {
+    if (rangesOverlap(candidate, s)) return s;
+  }
+  return null;
 }
 
 export function eventRange(e: CalendarEvent): Range {
@@ -52,6 +86,8 @@ interface FreeSlotOptions {
   dayEnd?: number;
   step?: number;
   ignoreId?: string;
+  /** Plages non planifiables du jour (voir blockedSpansForDay). */
+  blocked?: BlockedSpan[];
 }
 
 /**
@@ -73,7 +109,8 @@ export function findFreeSlot(
   const fits = (s: number) =>
     s >= dayStart &&
     s + durationMin <= dayEnd &&
-    !findConflict(events, day, s, durationMin, opts.ignoreId);
+    !findConflict(events, day, s, durationMin, opts.ignoreId) &&
+    !(opts.blocked && findBlocked(opts.blocked, s, durationMin));
 
   const aligned = Math.max(dayStart, Math.round(desiredStartMin / step) * step);
   for (let s = aligned; s + durationMin <= dayEnd; s += step) {
@@ -83,6 +120,36 @@ export function findFreeSlot(
     if (fits(s)) return s;
   }
   return null;
+}
+
+/**
+ * Intervalles libres d'une journée (ni séance, ni plage bloquée) pouvant
+ * accueillir un bloc de `durationMin`. Sert aux indices visuels pendant
+ * un glisser-déposer.
+ */
+export function freeIntervals(
+  events: CalendarEvent[],
+  blocked: BlockedSpan[],
+  day: string,
+  durationMin: number,
+  ignoreId?: string,
+): Range[] {
+  const occupied: Range[] = [
+    ...events
+      .filter((e) => e.startDate === day && e.status !== "skipped" && e.id !== ignoreId)
+      .map(eventRange),
+    ...blocked,
+  ].sort((a, b) => a.start - b.start);
+
+  const free: Range[] = [];
+  let cursor = DAY_START_MIN;
+  for (const r of occupied) {
+    if (r.start > cursor) free.push({ start: cursor, end: Math.min(r.start, DAY_END_MIN) });
+    cursor = Math.max(cursor, r.end);
+  }
+  if (cursor < DAY_END_MIN) free.push({ start: cursor, end: DAY_END_MIN });
+
+  return free.filter((f) => f.end - f.start >= durationMin);
 }
 
 export function clampStart(startMin: number, durationMin: number): number {

@@ -93,8 +93,33 @@ body {
 .qe-chain-flow {
   animation: qe-chain-flow 1.2s linear infinite;
 }
+/* Blog façade: scrolling announcements ticker */
+@keyframes qe-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.qe-marquee {
+  animation: qe-marquee 28s linear infinite;
+}
+.qe-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Blog façade: slow decorative orbit */
+@keyframes qe-spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.qe-spin-slow {
+  animation: qe-spin-slow 26s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .qe-chain-flow {
+  .qe-chain-flow,
+  .qe-marquee,
+  .qe-spin-slow {
     animation: none;
   }
 }

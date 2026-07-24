@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { OrganizeState, CalendarEvent, BacklogItem, AutoModeConfig, AppNotification } from "../data/types";
+import type { OrganizeState, CalendarEvent, BacklogItem, AutoModeConfig, AppNotification, BlockedRange } from "../data/types";
 import { MOCK_EVENTS } from "../data/mockEvents";
 import { DEFAULT_EXAM_DATE } from "../data/examDate";
 import { todayISO } from "../lib/dateUtils";
@@ -17,6 +17,9 @@ const DEFAULT_STATE: OrganizeState = {
     { id: "bl-4", type: "lecture",  courseId: 44, createdAt: new Date().toISOString() },
   ],
   autoMode: { enabled: false, intervals: [2, 7, 10, 30], customMode: false, preferredHour: "09:00" },
+  blockedRanges: [
+    { id: "blk-1", label: "Pause déjeuner", days: [0, 1, 2, 3, 4, 5, 6], startTime: "12:30", endTime: "13:30" },
+  ],
   notifications: [],
   examDate: DEFAULT_EXAM_DATE,
   preferences: { lastView: "week", lastDailyRitualMorning: null, lastDailyRitualEvening: null },
@@ -31,6 +34,7 @@ function load(): OrganizeState {
       ...DEFAULT_STATE,
       ...parsed,
       autoMode: { ...DEFAULT_STATE.autoMode, ...(parsed.autoMode ?? {}) },
+      blockedRanges: parsed.blockedRanges ?? DEFAULT_STATE.blockedRanges,
       preferences: { ...DEFAULT_STATE.preferences, ...(parsed.preferences ?? {}) },
     };
   } catch {
@@ -123,6 +127,19 @@ export function useOrganizeStore() {
     update((s) => ({ ...s, autoMode: { ...s.autoMode, ...patch } }));
   }, [update]);
 
+  // ── Plages bloquées ─────────────────────────────────────────
+  // TODO_SUPABASE: replace with API calls to /api/organize/blocked-ranges
+  const addBlockedRange = useCallback((r: Omit<BlockedRange, "id">) => {
+    update((s) => ({
+      ...s,
+      blockedRanges: [...s.blockedRanges, { ...r, id: `blk-${uuid()}` }],
+    }));
+  }, [update]);
+
+  const removeBlockedRange = useCallback((id: string) => {
+    update((s) => ({ ...s, blockedRanges: s.blockedRanges.filter((b) => b.id !== id) }));
+  }, [update]);
+
   // ── Notifications ───────────────────────────────────────────
   // TODO_SUPABASE: replace with API call to GET /api/organize/notifications
   const addNotification = useCallback((n: Omit<AppNotification, "id" | "createdAt">) => {
@@ -185,7 +202,7 @@ export function useOrganizeStore() {
     actions: {
       addEvent, updateEvent, deleteEvent, markDone, addManyEvents,
       addToBacklog, removeFromBacklog,
-      setAutoMode,
+      setAutoMode, addBlockedRange, removeBlockedRange,
       addNotification, markNotifRead, markAllNotifsRead,
       setPreference, setExamDate,
       markMorningRitual, markEveningRitual,

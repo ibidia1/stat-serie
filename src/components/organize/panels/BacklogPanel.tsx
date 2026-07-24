@@ -3,15 +3,20 @@
 import { motion } from "motion/react";
 import { Inbox, Plus, X } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { COURSES } from "../data/courses";
 import { EVENT_COLORS } from "../lib/colors";
 import type { BacklogItem } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 
 function DraggableBacklogItem({ item, onRemove }: { item: BacklogItem; onRemove: (id: string) => void }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `backlog-${item.id}`,
-    data: { backlogItem: item },
+    data: {
+      kind: "backlog",
+      backlogItem: item,
+      durationMinutes: item.type === "qcm" ? 30 : 45,
+    },
   });
   const colors = EVENT_COLORS[item.type];
   const course = COURSES.find((c) => c.id === item.courseId);
@@ -19,9 +24,13 @@ function DraggableBacklogItem({ item, onRemove }: { item: BacklogItem; onRemove:
   return (
     <div
       ref={setNodeRef}
+      data-backlog-id={item.id}
       {...listeners}
       {...attributes}
-      className={`flex cursor-grab items-center gap-2 rounded-lg px-2 py-1.5 ${colors.bg} ${isDragging ? "opacity-40" : ""}`}
+      style={transform ? { transform: CSS.Translate.toString(transform) } : undefined}
+      className={`flex cursor-grab items-center gap-2 rounded-lg px-2 py-1.5 active:cursor-grabbing ${colors.bg} ${
+        isDragging ? "relative z-50 opacity-90 shadow-lg ring-2 ring-primary/40" : ""
+      }`}
     >
       <span className="shrink-0 text-xs">{colors.icon}</span>
       <div className="min-w-0 flex-1">
