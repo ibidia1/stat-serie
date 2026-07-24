@@ -1,7 +1,7 @@
 export type Day = "J1" | "J2";
 
 export type Specialty =
-  | "Cardiologie-CCV"
+  | "Cardiologie-CCVT"
   | "Gynécologie-Obstétrique"
   | "Psychiatrie"
   | "Chirurgie générale"
