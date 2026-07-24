@@ -746,46 +746,9 @@ export default function AccueilDashboard({
                     <Trophy className="h-4 w-4" />
                     Plus que 3 h pour atteindre votre but
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Passerelle vers les statistiques détaillées (pas de doublon d'analyse) */}
-              <Card className="overflow-hidden">
-                <CardContent className="p-5">
-                  <div className="mb-3 flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                      <BarChart3 className="h-[18px] w-[18px] text-primary" />
-                    </div>
-                    <h2 className="text-base font-bold text-foreground">
-                      Point faible du moment
-                    </h2>
-                  </div>
-
-                  <div className="rounded-xl border border-destructive/25 bg-destructive/[0.05] p-3.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-foreground">
-                        Néphrologie
-                      </span>
-                      <span className="text-lg font-extrabold tabular-nums text-destructive">
-                        55%
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Votre spécialité la plus fragile — 30 QCM ciblés
-                      suffiraient à la remonter.
-                    </p>
-                    <button
-                      type="button"
-                      className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-destructive/10 py-2 text-xs font-bold text-destructive transition-colors hover:bg-destructive/[0.16] ${FOCUS_RING}`}
-                    >
-                      <Target className="h-3.5 w-3.5" aria-hidden />
-                      Travailler cette matière
-                    </button>
-                  </div>
-
                   <Link
                     href="/statistiques"
-                    className={`mt-3 flex items-center justify-between rounded-lg px-1 py-1 text-xs font-semibold text-primary transition-colors hover:underline ${FOCUS_RING}`}
+                    className={`mt-3 flex w-full items-center justify-between rounded-lg px-1 py-1 text-xs font-semibold text-primary transition-colors hover:underline ${FOCUS_RING}`}
                   >
                     Voir toutes mes statistiques
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden />
@@ -793,21 +756,27 @@ export default function AccueilDashboard({
                 </CardContent>
               </Card>
 
-              {/* Quote of the day */}
-              <Card className="overflow-hidden border-0 bg-gradient-to-br from-[#1e293b] to-[#0f172a] text-white">
+              {/* Citation du jour — alignée sur le style des autres cartes */}
+              <Card>
                 <CardContent className="p-5">
-                  <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/60">
-                    <Brain className="h-4 w-4" />
-                    Citation du jour
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                      <Brain className="h-[18px] w-[18px] text-primary" />
+                    </div>
+                    <h2 className="text-base font-bold text-foreground">
+                      Citation du jour
+                    </h2>
                   </div>
-                  <Quote className="mb-2 h-6 w-6 text-primary/60" />
-                  <p className="text-sm font-medium italic leading-relaxed text-white/90">
-                    Le succès est la somme de petits efforts répétés jour après
-                    jour.
-                  </p>
-                  <p className="mt-3 text-xs font-semibold text-white/50">
-                    — Robert Collier
-                  </p>
+                  <div className="rounded-xl border border-border bg-muted/40 p-4">
+                    <Quote className="mb-2 h-5 w-5 text-primary/50" aria-hidden />
+                    <p className="text-sm font-medium italic leading-relaxed text-foreground">
+                      Le succès est la somme de petits efforts répétés jour après
+                      jour.
+                    </p>
+                    <p className="mt-3 text-xs font-semibold text-muted-foreground">
+                      — Robert Collier
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
