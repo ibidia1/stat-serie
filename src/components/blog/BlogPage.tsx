@@ -287,10 +287,11 @@ export default function BlogPage() {
   }, []);
 
   // Sélection éditoriale de la façade : l'article vedette + les 3 plus récents.
-  const { featured, picks } = useMemo(() => {
+  const { featured, picks, nextUp } = useMemo(() => {
     const byDate = [...BLOG_ARTICLES].sort((a, b) => b.date.localeCompare(a.date));
     const feat = byDate.find((a) => a.featured) ?? byDate[0];
-    return { featured: feat, picks: byDate.filter((a) => a.id !== feat.id).slice(0, 3) };
+    const rest = byDate.filter((a) => a.id !== feat.id);
+    return { featured: feat, picks: rest.slice(0, 3), nextUp: rest.slice(3, 6) };
   }, []);
 
   const results = useMemo(() => {
@@ -324,12 +325,12 @@ export default function BlogPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         aria-label="À la une du blog"
-        className="grid gap-4 lg:grid-cols-[280px_1fr_320px] lg:grid-rows-[repeat(2,240px)]"
+        className="grid gap-4 lg:grid-cols-3"
       >
         {/* Centre : article vedette */}
         <button
           onClick={() => setReading(featured)}
-          className={`group relative overflow-hidden rounded-3xl text-left shadow-lg transition-shadow duration-300 hover:shadow-2xl lg:col-start-2 lg:row-start-1 lg:row-span-2 ${FOCUS_RING} min-h-[340px]`}
+          className={`group relative overflow-hidden rounded-3xl text-left shadow-lg transition-shadow duration-300 hover:shadow-2xl lg:col-span-2 ${FOCUS_RING} min-h-[420px]`}
         >
           <div className={`absolute inset-0 bg-gradient-to-br ${fs.gradient}`} />
           <div
@@ -387,7 +388,7 @@ export default function BlogPage() {
         </button>
 
         {/* Colonne droite : manifeste + 3ᵉ sélection */}
-        <div className="relative flex flex-col justify-between gap-3 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card to-primary/[0.06] p-5 shadow-sm lg:col-start-3 lg:row-start-1">
+        <div className="relative flex flex-col justify-between gap-3 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card to-primary/[0.06] p-5 shadow-sm">
           <div aria-hidden className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
           <div className="relative">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/[0.08] px-3 py-1 text-xs font-bold text-primary">
@@ -416,8 +417,39 @@ export default function BlogPage() {
                 </div>
               ))}
             </div>
+
+            {/* Mini-index éditorial : à lire ensuite */}
+            <div className="mt-4 border-t border-border/70 pt-3">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                À lire ensuite
+              </p>
+              <ul className="space-y-1.5">
+                {nextUp.map((a, i) => (
+                  <li key={a.id}>
+                    <button
+                      onClick={() => setReading(a)}
+                      className={`group flex w-full items-start gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-muted/60 ${FOCUS_RING}`}
+                    >
+                      <span className="mt-0.5 font-mono text-[10px] font-bold text-muted-foreground/70">
+                        0{i + 4}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="line-clamp-2 block text-[12px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                          {a.title}
+                        </span>
+                        <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <span className={`h-1.5 w-1.5 rounded-full ${CATEGORY_STYLES[a.category].dot}`} aria-hidden />
+                          {a.category} · {a.readMinutes} min
+                        </span>
+                      </span>
+                      <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-          <div className="relative flex items-center gap-2">
+          <div className="relative mt-4 flex items-center gap-2">
             <button
               onClick={() => {
                 searchRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -442,11 +474,25 @@ export default function BlogPage() {
             ))}
           </div>
         </div>
-        <CoverCard article={picks[2]} index="003" onOpen={setReading} className="min-h-[220px] lg:col-start-3 lg:row-start-2" />
+      </motion.section>
 
-        {/* Colonne gauche : 2 sélections */}
-        <CoverCard article={picks[0]} index="001" onOpen={setReading} className="min-h-[220px] lg:col-start-1 lg:row-start-1" />
-        <CoverCard article={picks[1]} index="002" onOpen={setReading} className="min-h-[220px] lg:col-start-1 lg:row-start-2" />
+      {/* ══ Sélections — rangée de tiers ════════════ */}
+      <motion.section
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.08 }}
+        aria-label="Sélections de la rédaction"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {picks.map((p, i) => (
+          <CoverCard
+            key={p.id}
+            article={p}
+            index={`00${i + 1}`}
+            onOpen={setReading}
+            className="min-h-[230px]"
+          />
+        ))}
       </motion.section>
 
       {/* ══ Ticker d'annonces ═══════════════════════ */}

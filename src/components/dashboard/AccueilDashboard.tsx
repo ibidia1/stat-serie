@@ -3,21 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-} from "recharts";
-import {
   Activity,
   ArrowRight,
-  Award,
   BarChart3,
   Bell,
   BookOpen,
   Brain,
   Calendar,
+  CalendarClock,
   CheckCircle2,
   ChevronRight,
   Clock,
@@ -31,14 +24,14 @@ import {
   Moon,
   Play,
   Quote,
+  RotateCcw,
   Search,
   Sparkles,
-  Stethoscope,
   Sun,
   Target,
-  TrendingUp,
   Trophy,
 } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent } from "../ui/card";
 
 // ─────────────────────────────────────────────────────────
@@ -112,21 +105,35 @@ const TODAY_TASKS: Task[] = [
   },
 ];
 
-const WEEKLY_ACTIVITY = [
-  { day: "Lun", qcm: 42 },
-  { day: "Mar", qcm: 68 },
-  { day: "Mer", qcm: 55 },
-  { day: "Jeu", qcm: 90 },
-  { day: "Ven", qcm: 74 },
-  { day: "Sam", qcm: 110 },
-  { day: "Dim", qcm: 63 },
-];
-
-const SUBJECTS = [
-  { name: "Cardiologie", value: 88, color: "var(--primary)" },
-  { name: "Pneumologie", value: 72, color: "var(--success)" },
-  { name: "Neurologie", value: 64, color: "var(--accent)" },
-  { name: "Néphrologie", value: 51, color: "#a855f7" },
+/** Prochaines échéances du plan de répétition espacée (vue action, pas bilan). */
+const UPCOMING_REVISIONS = [
+  {
+    id: "r1",
+    emoji: "❤️",
+    title: "SCA — Syndrome Coronarien Aigu",
+    subject: "Cardiologie",
+    interval: "J7",
+    when: "En retard",
+    overdue: true,
+  },
+  {
+    id: "r2",
+    emoji: "🫁",
+    title: "BPCO — Exacerbations",
+    subject: "Pneumologie",
+    interval: "J2",
+    when: "Aujourd'hui",
+    overdue: false,
+  },
+  {
+    id: "r3",
+    emoji: "🧠",
+    title: "AVC ischémique",
+    subject: "Neurologie",
+    interval: "J10",
+    when: "Demain",
+    overdue: false,
+  },
 ];
 
 const NAV_ITEMS = [
@@ -187,22 +194,6 @@ function ProgressRing({ value }: { value: number }) {
           objectif
         </span>
       </div>
-    </div>
-  );
-}
-
-type ChartTooltipProps = {
-  active?: boolean;
-  payload?: Array<{ value?: number }>;
-};
-
-function ChartTooltip({ active, payload }: ChartTooltipProps) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-lg border border-border bg-card px-3 py-1.5 shadow-md">
-      <p className="text-xs font-semibold text-foreground">
-        {payload[0]?.value} QCM
-      </p>
     </div>
   );
 }
@@ -409,40 +400,40 @@ export default function AccueilDashboard({
             </div>
           </motion.section>
 
-          {/* KPI stats */}
+          {/* KPI — orientés action (le bilan chiffré vit dans « Statistiques ») */}
           <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {[
               {
                 icon: Flame,
                 label: "Jours de série",
                 value: "7",
-                hint: "Record : 14",
+                hint: "Record : 14 — ne cassez pas la chaîne",
                 tint: "text-accent",
                 bg: "bg-accent/10",
               },
               {
                 icon: ListChecks,
-                label: "QCM résolus",
-                value: "1 247",
-                hint: "+86 cette semaine",
+                label: "Au programme",
+                value: `${TODAY_TASKS.length - completedCount}`,
+                hint: `sur ${TODAY_TASKS.length} activités aujourd'hui`,
                 tint: "text-primary",
                 bg: "bg-primary/10",
               },
               {
-                icon: Award,
-                label: "Cours terminés",
-                value: "12",
-                hint: "sur 18 prévus",
-                tint: "text-success",
-                bg: "bg-success/10",
-              },
-              {
-                icon: Target,
-                label: "Taux de réussite",
-                value: "85%",
-                hint: "+4% vs. mois dernier",
+                icon: RotateCcw,
+                label: "Révisions dues",
+                value: "3",
+                hint: "dont 1 en retard",
                 tint: "text-[#a855f7]",
                 bg: "bg-[#a855f7]/10",
+              },
+              {
+                icon: CalendarClock,
+                label: "Avant le concours",
+                value: "J-58",
+                hint: "≈ 8 semaines de révision",
+                tint: "text-success",
+                bg: "bg-success/10",
               },
             ].map((s, i) => (
               <motion.div
@@ -625,83 +616,72 @@ export default function AccueilDashboard({
                 </button>
               </div>
 
-              {/* Weekly activity */}
+              {/* Prochaines révisions — répétition espacée (actionnable) */}
               <Card>
                 <CardContent className="p-5 md:p-6">
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
-                        <Activity className="h-[18px] w-[18px] text-success" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#a855f7]/10">
+                        <RotateCcw className="h-[18px] w-[18px] text-[#a855f7]" />
                       </div>
                       <div>
                         <h2 className="text-base font-bold text-foreground">
-                          Activité de la semaine
+                          Prochaines révisions
                         </h2>
                         <p className="text-xs text-muted-foreground">
-                          502 QCM résolus · 7 jours d&apos;affilée
+                          Votre plan de répétition espacée
                         </p>
                       </div>
                     </div>
-                    <span className="hidden items-center gap-1 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-success sm:flex">
-                      <TrendingUp className="h-3.5 w-3.5" aria-hidden /> +18%
-                    </span>
+                    <Link
+                      href="/#calendrier"
+                      className={`hidden items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 sm:flex ${FOCUS_RING}`}
+                    >
+                      Ouvrir le calendrier
+                      <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                    </Link>
                   </div>
-                  <div className="h-44 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
-                        data={WEEKLY_ACTIVITY}
-                        margin={{ top: 8, right: 4, left: 4, bottom: 0 }}
+
+                  <ul className="space-y-2.5">
+                    {UPCOMING_REVISIONS.map((r) => (
+                      <li
+                        key={r.id}
+                        className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+                          r.overdue
+                            ? "border-destructive/30 bg-destructive/[0.05]"
+                            : "border-border hover:bg-muted/40"
+                        }`}
                       >
-                        <defs>
-                          <linearGradient
-                            id="qcmGradient"
-                            x1="0"
-                            y1="0"
-                            x2="0"
-                            y2="1"
-                          >
-                            <stop
-                              offset="0%"
-                              stopColor="var(--primary)"
-                              stopOpacity={0.35}
-                            />
-                            <stop
-                              offset="100%"
-                              stopColor="var(--primary)"
-                              stopOpacity={0}
-                            />
-                          </linearGradient>
-                        </defs>
-                        <XAxis
-                          dataKey="day"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{
-                            fill: isDark ? "#94a3b8" : "#64748b",
-                            fontSize: 12,
-                          }}
-                          dy={6}
-                        />
-                        <Tooltip
-                          content={<ChartTooltip />}
-                          cursor={{
-                            stroke: "var(--primary)",
-                            strokeWidth: 1,
-                            strokeDasharray: "4 4",
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="qcm"
-                          stroke="var(--primary)"
-                          strokeWidth={2.5}
-                          fill="url(#qcmGradient)"
-                          dot={{ r: 0 }}
-                          activeDot={{ r: 5, strokeWidth: 0 }}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#a855f7]/10 text-lg">
+                          {r.emoji}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {r.title}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {r.subject}
+                          </p>
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold ${
+                            r.overdue
+                              ? "bg-destructive/10 text-destructive"
+                              : "bg-[#a855f7]/10 text-[#a855f7]"
+                          }`}
+                        >
+                          {r.interval}
+                        </span>
+                        <span
+                          className={`w-24 shrink-0 text-right text-xs font-medium ${
+                            r.overdue ? "text-destructive" : "text-muted-foreground"
+                          }`}
+                        >
+                          {r.when}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             </div>
@@ -769,42 +749,47 @@ export default function AccueilDashboard({
                 </CardContent>
               </Card>
 
-              {/* Performance by subject */}
-              <Card>
+              {/* Passerelle vers les statistiques détaillées (pas de doublon d'analyse) */}
+              <Card className="overflow-hidden">
                 <CardContent className="p-5">
-                  <div className="mb-4 flex items-center gap-2.5">
+                  <div className="mb-3 flex items-center gap-2.5">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                      <Stethoscope className="h-[18px] w-[18px] text-primary" />
+                      <BarChart3 className="h-[18px] w-[18px] text-primary" />
                     </div>
                     <h2 className="text-base font-bold text-foreground">
-                      Performance par matière
+                      Point faible du moment
                     </h2>
                   </div>
-                  <ul className="space-y-3.5">
-                    {SUBJECTS.map((s, i) => (
-                      <li key={s.name}>
-                        <div className="mb-1 flex justify-between text-xs font-medium">
-                          <span className="text-foreground">{s.name}</span>
-                          <span className="text-muted-foreground">
-                            {s.value}%
-                          </span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-muted">
-                          <motion.div
-                            className="h-full rounded-full"
-                            style={{ backgroundColor: s.color }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${s.value}%` }}
-                            transition={{
-                              duration: 0.9,
-                              delay: 0.1 * i,
-                              ease: "easeOut",
-                            }}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+
+                  <div className="rounded-xl border border-destructive/25 bg-destructive/[0.05] p-3.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-foreground">
+                        Néphrologie
+                      </span>
+                      <span className="text-lg font-extrabold tabular-nums text-destructive">
+                        55%
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Votre spécialité la plus fragile — 30 QCM ciblés
+                      suffiraient à la remonter.
+                    </p>
+                    <button
+                      type="button"
+                      className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-destructive/10 py-2 text-xs font-bold text-destructive transition-colors hover:bg-destructive/[0.16] ${FOCUS_RING}`}
+                    >
+                      <Target className="h-3.5 w-3.5" aria-hidden />
+                      Travailler cette matière
+                    </button>
+                  </div>
+
+                  <Link
+                    href="/statistiques"
+                    className={`mt-3 flex items-center justify-between rounded-lg px-1 py-1 text-xs font-semibold text-primary transition-colors hover:underline ${FOCUS_RING}`}
+                  >
+                    Voir toutes mes statistiques
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                  </Link>
                 </CardContent>
               </Card>
 
