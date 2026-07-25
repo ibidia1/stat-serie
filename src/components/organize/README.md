@@ -161,7 +161,12 @@ Autres types : `BlockedRange` (plage non planifiable), `BacklogItem` (à planifi
 
 ### Vue Semaine (`WeekView.tsx`) — vue principale
 
-- Grille horaire **07 h → 22 h**, une colonne par jour, **7 jours**.
+- Grille horaire **07 h → 24 h** par défaut, une colonne par jour, **7 jours**.
+- **Plage horaire extensible** : un bouton `07 h / 24 h` dans la barre bascule vers la
+  **journée complète (00 h → 24 h)** pour l'étudiant qui travaille tôt ou très tard.
+  Le choix est **persisté** (`preferences.fullDayGrid`) et propagé à toute la
+  géométrie : étiquettes, lignes d'heures, position des cartes, zone de drop,
+  bornes de placement.
 - **Fenêtre glissante** : le jour de début est libre. On peut afficher
   **mercredi → mardi** pour voir la jonction entre deux semaines.
   Navigation : `«` −1 semaine · `‹` −1 jour · `›` +1 jour · `»` +1 semaine.
@@ -296,6 +301,9 @@ Implémentée dans `CalendarView.tsx` (`onPanDown/Move/Up`).
      et de la colonne (`getBoundingClientRect`) — et non depuis les deltas de
      dnd-kit, qui dérivent quand la grille défile automatiquement pendant le geste.
      *(bug rencontré et corrigé : ne pas revenir aux deltas)*
+     L'origine de la grille (07 h ou 00 h) est transmise par la zone de drop
+     (`originMin` dans les `data` du `useDroppable`), pour rester juste quelle que
+     soit la plage affichée.
   3. Alignement sur 15 min + bornage dans la journée.
   4. Plage bloquée → refus. Chevauchement → refus.
   5. Sinon `onMoveEvent(id, date, time)`.
@@ -364,13 +372,31 @@ afficher « — ». **Ne jamais inventer une durée par défaut.**
 **`calendar/gridConstants.ts`** — modifier ici et **nulle part ailleurs** :
 
 ```ts
-HOURS_START  = 7     // début de journée affichée
-HOURS_END    = 22    // fin de journée affichée
-PX_PER_HOUR  = 68    // hauteur d'une heure → pilote la taille des cartes
-SNAP_MINUTES = 15    // pas d'alignement au drag et au resize
-GRID_HEIGHT  = (HOURS_END - HOURS_START) × PX_PER_HOUR
-DAY_START_MIN / DAY_END_MIN   // bornes en minutes, utilisées par les conflits
+HOURS_END             = 24   // fin de journée : toujours minuit
+DEFAULT_HOURS_START   = 7    // début affiché par défaut
+FULL_HOURS_START      = 0    // début en mode journée complète
+PX_PER_HOUR           = 68   // hauteur d'une heure → taille des cartes
+SNAP_MINUTES          = 15   // pas d'alignement au drag et au resize
+
+// Helpers dépendant du mode choisi (fullDay : boolean)
+hoursStartFor(fullDay)   // 7 ou 0
+dayStartMinFor(fullDay)  // 420 ou 0  → origine de la grille en minutes
+gridHeightFor(fullDay)   // hauteur totale en px
+
+DEFAULT_DAY_START_MIN = 420   // bornes par défaut du placement automatique
+DAY_END_MIN           = 1440
 ```
+
+**Deux fenêtres distinctes, à ne pas confondre :**
+
+| Fenêtre | Valeur | Usage |
+|---|---|---|
+| **Affichage** | 07 h→24 h, ou 00 h→24 h si étendue | Ce que voit l'étudiant ; borne le **drag manuel** |
+| **Placement automatique** | 07 h→24 h (`DEFAULT_DAY_START_MIN` → `DAY_END_MIN`) | `findFreeSlot` : évite de générer des révisions à 3 h du matin |
+
+Autrement dit : l'étudiant **peut** poser une séance à 5 h s'il étend la grille,
+mais le système ne le fera **jamais** de lui-même. `findFreeSlot`, `clampStart` et
+`freeIntervals` acceptent des bornes en paramètre pour couvrir les deux cas.
 
 Autres réglages : `PAN_STEP_PX` (`CalendarView.tsx`), `CHAIN_COLORS` (`lib/chains.ts`),
 `EVENT_COLORS` (`lib/colors.ts`), `DEFAULT_EXAM_DATE` (`data/examDate.ts`).
@@ -416,9 +442,12 @@ suppression d'un cours emporte ses révisions) et un index sur
 4. **Positions mesurées, pas calculées** — pour le drop et les liens, utiliser
    `getBoundingClientRect` sur les éléments `data-event-id`. Les deltas dnd-kit
    dérivent pendant l'auto-scroll.
-5. **`estimateDuration` peut retourner `null`** — l'afficher comme « — », ne pas
+5. **Ne jamais figer l'origine de la grille** — passer par `dayStartMinFor(fullDay)`
+   ou par l'`originMin` de la zone de drop. Une constante en dur casse le mode
+   journée complète.
+6. **`estimateDuration` peut retourner `null`** — l'afficher comme « — », ne pas
    substituer de valeur arbitraire.
-6. **Les vues restent sans logique métier** — toute nouvelle règle va dans
+7. **Les vues restent sans logique métier** — toute nouvelle règle va dans
    `OrganizePage.tsx` ou dans `lib/` (fonctions pures).
-7. **Le store écrit en debounce (200 ms)** — ne pas déclencher de rechargement
+8. **Le store écrit en debounce (200 ms)** — ne pas déclencher de rechargement
    synchrone après une action, l'UI est déjà optimiste.

@@ -12,7 +12,7 @@ import {
 import type { BacklogItem, CalendarEvent } from "../data/types";
 import { timeToMinutes, minutesToHHMM, todayISO } from "../lib/dateUtils";
 import { findConflict, findBlocked, clampStart, snap, type BlockedSpan } from "../lib/conflicts";
-import { PX_PER_HOUR, DAY_START_MIN } from "./gridConstants";
+import { PX_PER_HOUR, DEFAULT_DAY_START_MIN, DAY_END_MIN } from "./gridConstants";
 
 /** Infos sur le drag en cours, consommées par les cellules pour afficher les créneaux libres. */
 export interface DragHint {
@@ -37,12 +37,19 @@ function dropStartMin(
   draggedSelector: string,
   destDate: string,
   durationMin: number,
+  originMin: number,
+  dayEndMin: number,
 ): number | null {
   const draggedEl = document.querySelector<HTMLElement>(draggedSelector);
   const cellEl = document.querySelector<HTMLElement>(`[data-day-cell="${destDate}"]`);
   if (!draggedEl || !cellEl) return null;
   const offsetPx = draggedEl.getBoundingClientRect().top - cellEl.getBoundingClientRect().top;
-  return clampStart(snap(DAY_START_MIN + (offsetPx / PX_PER_HOUR) * 60), durationMin);
+  return clampStart(
+    snap(originMin + (offsetPx / PX_PER_HOUR) * 60),
+    durationMin,
+    originMin,
+    dayEndMin,
+  );
 }
 
 export function DragDropContext({ children, events, blockedForDay, onMoveEvent, onBacklogDrop, onReject }: Props) {
@@ -76,7 +83,9 @@ export function DragDropContext({ children, events, blockedForDay, onMoveEvent, 
       | undefined;
     if (!data?.kind) return;
 
-    const over2 = over.data.current as { date?: string; mode?: string } | undefined;
+    const over2 = over.data.current as { date?: string; mode?: string; originMin?: number; dayEndMin?: number } | undefined;
+    const originMin = over2?.originMin ?? DEFAULT_DAY_START_MIN;
+    const dayEndMin = over2?.dayEndMin ?? DAY_END_MIN;
 
     // ── Backlog item dropped on the calendar → schedule it ──
     if (data.kind === "backlog" && data.backlogItem) {
@@ -92,6 +101,8 @@ export function DragDropContext({ children, events, blockedForDay, onMoveEvent, 
               `[data-backlog-id="${CSS.escape(data.backlogItem.id)}"]`,
               destDate,
               data.durationMinutes ?? 30,
+              originMin,
+              dayEndMin,
             )
           : null;
       onBacklogDrop(data.backlogItem, destDate, startMin);
@@ -114,10 +125,18 @@ export function DragDropContext({ children, events, blockedForDay, onMoveEvent, 
 
     if (over2?.mode === "time") {
       startMin =
-        dropStartMin(`[data-event-id="${CSS.escape(String(active.id))}"]`, destDate, duration) ??
+        dropStartMin(
+          `[data-event-id="${CSS.escape(String(active.id))}"]`,
+          destDate,
+          duration,
+          originMin,
+          dayEndMin,
+        ) ??
         clampStart(
           snap(timeToMinutes(data.startTime) + Math.round((delta.y / PX_PER_HOUR) * 60)),
           duration,
+          originMin,
+          dayEndMin,
         );
     } else {
       // Month view: day-level move, time preserved.

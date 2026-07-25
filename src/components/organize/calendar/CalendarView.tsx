@@ -29,13 +29,16 @@ interface Props {
   onResizeEvent: (id: string, newDurationMinutes: number) => void;
   onBacklogDrop: (item: BacklogItem, date: string, startMin: number | null) => void;
   onOpenActions: (event: CalendarEvent, rect: DOMRect) => void;
+  /** Grille étendue à la journée complète (00 h → 24 h). */
+  fullDay: boolean;
+  onFullDayChange: (v: boolean) => void;
   onReject?: (message: string) => void;
 }
 
 export function CalendarView({
   view, events, examDate, blockedRanges,
   onDeleteEvent, onMarkDone, onMoveEvent, onExecuteRevision,
-  onResizeEvent, onBacklogDrop, onOpenActions, onReject,
+  onResizeEvent, onBacklogDrop, onOpenActions, fullDay, onFullDayChange, onReject,
 }: Props) {
   const [weekStart,  setWeekStart]  = useState(getMondayOfWeek(todayISO()));
   const [dayDate,    setDayDate]    = useState(todayISO());
@@ -140,6 +143,8 @@ export function CalendarView({
             onExecuteRevision={onExecuteRevision}
             onResizeEvent={onResizeEvent}
             onOpenActions={onOpenActions}
+            fullDay={fullDay}
+            onFullDayChange={onFullDayChange}
           />
         )}
         {view === "day" && (

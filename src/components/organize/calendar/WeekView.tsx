@@ -2,7 +2,7 @@
 
 import { useContext, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Printer, Link2, Link2Off } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Printer, Link2, Link2Off, ChevronsUpDown } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   getMondayOfWeek, windowDates, windowLabel, formatDayHeader,
@@ -17,9 +17,7 @@ import type { CalendarEvent, BlockedRange } from "../data/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { printWeek } from "../lib/pdfExport";
 import { countdownDays } from "../lib/dateUtils";
-import { HOURS_START, HOURS_END, PX_PER_HOUR, GRID_HEIGHT, DAY_START_MIN } from "./gridConstants";
-
-const minToPx = (min: number) => ((min - DAY_START_MIN) / 60) * PX_PER_HOUR;
+import { HOURS_END, PX_PER_HOUR, hoursStartFor, dayStartMinFor, gridHeightFor } from "./gridConstants";
 
 interface DroppableCellProps {
   date: string;
@@ -28,10 +26,17 @@ interface DroppableCellProps {
   isToday: boolean;
   blocked: BlockedSpan[];
   dayEvents: CalendarEvent[];
+  /** Origine de la grille en minutes depuis minuit (07 h ou 00 h). */
+  originMin: number;
+  gridHeight: number;
 }
 
-function DroppableCell({ date, children, isPast, isToday, blocked, dayEvents }: DroppableCellProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: `cell-${date}`, data: { date, mode: "time" } });
+function DroppableCell({ date, children, isPast, isToday, blocked, dayEvents, originMin, gridHeight }: DroppableCellProps) {
+  const minToPx = (min: number) => ((min - originMin) / 60) * PX_PER_HOUR;
+  const { setNodeRef, isOver } = useDroppable({
+    id: `cell-${date}`,
+    data: { date, mode: "time", originMin, dayEndMin: HOURS_END * 60 },
+  });
   const hint = useContext(DragHintContext);
   const showHints = isOver && !isPast && hint !== null;
 
@@ -42,7 +47,7 @@ function DroppableCell({ date, children, isPast, isToday, blocked, dayEvents }: 
       className={`relative border-l border-border/50 ${isToday ? "bg-primary/[0.018]" : ""} ${
         isOver && !isPast ? "bg-primary/10" : ""
       }`}
-      style={{ height: `${GRID_HEIGHT}px` }}
+      style={{ height: `${gridHeight}px` }}
     >
       {/* Plages bloquées (non planifiables) */}
       {blocked.map((b, i) => (
@@ -66,7 +71,7 @@ function DroppableCell({ date, children, isPast, isToday, blocked, dayEvents }: 
 
       {/* Créneaux libres suggérés pendant un drag */}
       {showHints &&
-        freeIntervals(dayEvents, blocked, date, hint.durationMinutes, hint.ignoreId).map((f, i) => (
+        freeIntervals(dayEvents, blocked, date, hint.durationMinutes, hint.ignoreId, originMin, HOURS_END * 60).map((f, i) => (
           <div
             key={`free-${i}`}
             className="pointer-events-none absolute inset-x-0.5 z-[1] rounded bg-success/10 ring-1 ring-inset ring-success/40"
@@ -90,9 +95,12 @@ interface Props {
   onExecuteRevision: (ev: CalendarEvent) => void;
   onResizeEvent: (id: string, newDurationMinutes: number) => void;
   onOpenActions: (event: CalendarEvent, rect: DOMRect) => void;
+  /** Journée complète (00 h → 24 h) au lieu de 07 h → 24 h. */
+  fullDay: boolean;
+  onFullDayChange: (v: boolean) => void;
 }
 
-export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRanges, onDeleteEvent, onMarkDone, onExecuteRevision, onResizeEvent, onOpenActions }: Props) {
+export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRanges, onDeleteEvent, onMarkDone, onExecuteRevision, onResizeEvent, onOpenActions, fullDay, onFullDayChange }: Props) {
   const today   = todayISO();
   // Fenêtre glissante de 7 jours démarrant à `weekStart` (pas de calage sur lundi).
   const start   = weekStart;
@@ -102,6 +110,11 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
   const gridRef   = useRef<HTMLDivElement>(null);
   const [showAll, setShowAll] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+
+  // Fenêtre horaire : 07 h → 24 h par défaut, extensible à la journée complète.
+  const hoursStart = hoursStartFor(fullDay);
+  const originMin  = dayStartMinFor(fullDay);
+  const gridHeight = gridHeightFor(fullDay);
 
   function eventsForDay(date: string) {
     return events.filter((e) => e.startDate === date).sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -161,6 +174,19 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                 {showAll ? <Link2 className="h-3.5 w-3.5" /> : <Link2Off className="h-3.5 w-3.5" />}
               </button>
               <button
+                type="button"
+                onClick={() => onFullDayChange(!fullDay)}
+                title={fullDay ? "Revenir à la journée d'étude (07 h → 24 h)" : "Afficher la journée complète (00 h → 24 h)"}
+                aria-label="Étendre la plage horaire affichée"
+                aria-pressed={fullDay}
+                className={`no-print flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[11px] transition-colors hover:bg-muted ${
+                  fullDay ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <ChevronsUpDown className="h-3 w-3" />
+                {fullDay ? "24 h" : "07 h"}
+              </button>
+              <button
                 onClick={() => onWeekChange(getMondayOfWeek(todayISO()))}
                 className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
               >
@@ -198,7 +224,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
             <div
               ref={gridRef}
               className="relative grid"
-              style={{ gridTemplateColumns: "44px repeat(7, 1fr)", height: `${GRID_HEIGHT}px` }}
+              style={{ gridTemplateColumns: "44px repeat(7, 1fr)", height: `${gridHeight}px` }}
               onClick={() => setSelectedKey(null)}
             >
               <ChainConnectors
@@ -210,13 +236,13 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
               />
               {/* Hour labels */}
               <div className="relative">
-                {Array.from({ length: HOURS_END - HOURS_START }, (_, i) => (
+                {Array.from({ length: HOURS_END - hoursStart }, (_, i) => (
                   <div
                     key={i}
                     className="absolute right-1.5 text-[11px] font-medium tabular-nums text-muted-foreground/70 leading-none"
                     style={{ top: `${i * PX_PER_HOUR - 5}px` }}
                   >
-                    {String(HOURS_START + i).padStart(2, "0")}h
+                    {String(hoursStart + i).padStart(2, "0")}h
                   </div>
                 ))}
               </div>
@@ -230,9 +256,9 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                 const nowTop    = (() => {
                   if (!isToday) return null;
                   const now = new Date();
-                  const min = now.getHours() * 60 + now.getMinutes() - HOURS_START * 60;
+                  const min = now.getHours() * 60 + now.getMinutes() - originMin;
                   const top = (min / 60) * PX_PER_HOUR;
-                  return top >= 0 && top <= GRID_HEIGHT ? top : null;
+                  return top >= 0 && top <= gridHeight ? top : null;
                 })();
 
                 return (
@@ -243,9 +269,11 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
                     isToday={isToday}
                     blocked={blocked}
                     dayEvents={dayEvents}
+                    originMin={originMin}
+                    gridHeight={gridHeight}
                   >
                     {/* Hour lines */}
-                    {Array.from({ length: HOURS_END - HOURS_START }, (_, i) => (
+                    {Array.from({ length: HOURS_END - hoursStart }, (_, i) => (
                       <div
                         key={i}
                         className="absolute inset-x-0 border-t border-border/30"
@@ -266,7 +294,7 @@ export function WeekView({ weekStart, onWeekChange, events, examDate, blockedRan
 
                     {/* Events */}
                     {dayEvents.map((ev) => {
-                      const startMin = timeToMinutes(ev.startTime) - HOURS_START * 60;
+                      const startMin = timeToMinutes(ev.startTime) - originMin;
                       const top      = (startMin / 60) * PX_PER_HOUR;
                       const height   = Math.max(30, (ev.durationMinutes / 60) * PX_PER_HOUR - 2);
                       return (
