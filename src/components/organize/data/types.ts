@@ -134,6 +134,8 @@ export interface PlanTemplate {
 
 export interface OrganizePreferences {
   lastView: "month" | "week" | "day";
+  /** Grille horaire étendue à la journée complète (00 h → 24 h). */
+  fullDayGrid?: boolean;
   lastDailyRitualMorning: string | null;
   lastDailyRitualEvening: string | null;
 }

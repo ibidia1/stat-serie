@@ -6,13 +6,11 @@ import Fuse from "fuse.js";
 import {
   ArrowRight,
   ArrowUpRight,
-  BookMarked,
   BookOpen,
   Clock,
-  GraduationCap,
+  Flame,
   Megaphone,
   Newspaper,
-  Rss,
   Search,
   Sparkles,
   Tag,
@@ -84,6 +82,17 @@ function formatShort(iso: string): string {
   );
 }
 
+/** Ancienneté lisible : « Aujourd'hui », « 3 j », « 2 sem. ». */
+function relativeAge(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  const days = Math.max(0, Math.round((Date.now() - d.getTime()) / 86400000));
+  if (days === 0) return "Aujourd'hui";
+  if (days === 1) return "Hier";
+  if (days < 7) return `${days} j`;
+  if (days < 30) return `${Math.floor(days / 7)} sem.`;
+  return `${Math.floor(days / 30)} mois`;
+}
+
 /** Grain photographique subtil (data-URI, aucune requête réseau). */
 const NOISE_URI =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E\")";
@@ -143,7 +152,8 @@ function CoverCard({
   className = "",
 }: {
   article: BlogArticle;
-  index: string;
+  /** Numéro éditorial (« 002 »). Omis = carte épurée. */
+  index?: string;
   onOpen: (a: BlogArticle) => void;
   className?: string;
 }) {
@@ -157,12 +167,14 @@ function CoverCard({
       <div aria-hidden className="absolute -left-10 -top-12 h-40 w-40 rounded-full bg-white/25 blur-2xl" />
       <div aria-hidden className="absolute -bottom-14 right-8 h-40 w-40 rounded-full bg-black/25 blur-3xl" />
       <EcgMotif className="top-[30%]" />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -right-2 top-2 select-none font-mono text-[84px] font-black leading-none text-white/15"
-      >
-        {index.replace(/\s/g, "").slice(-1)}
-      </span>
+      {index && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -right-2 top-2 select-none font-mono text-[84px] font-black leading-none text-white/15"
+        >
+          {index.replace(/\s/g, "").slice(-1)}
+        </span>
+      )}
       <span
         aria-hidden
         className="absolute right-5 top-1/2 grid h-24 w-24 -translate-y-[60%] place-items-center rounded-full bg-white/15 text-6xl shadow-inner backdrop-blur-[2px] transition-transform duration-500 [filter:drop-shadow(0_10px_14px_rgba(0,0,0,0.3))] group-hover:-rotate-6 group-hover:scale-110"
@@ -177,8 +189,10 @@ function CoverCard({
         <span className={GLASS_PILL}>{formatShort(article.date)}</span>
       </div>
 
-      <div className="absolute bottom-3 left-4 right-14">
-        <p className="font-mono text-[10px] font-bold tracking-[0.3em] text-white/70">{index}</p>
+      <div className="absolute bottom-3 left-4 right-16">
+        {index && (
+          <p className="font-mono text-[10px] font-bold tracking-[0.3em] text-white/70">{index}</p>
+        )}
         <h3 className="mt-0.5 line-clamp-2 text-lg font-bold leading-snug text-white drop-shadow-sm">
           {article.title}
         </h3>
@@ -287,11 +301,11 @@ export default function BlogPage() {
   }, []);
 
   // Sélection éditoriale de la façade : l'article vedette + les 3 plus récents.
-  const { featured, picks, nextUp } = useMemo(() => {
+  const { featured, picks, rail } = useMemo(() => {
     const byDate = [...BLOG_ARTICLES].sort((a, b) => b.date.localeCompare(a.date));
     const feat = byDate.find((a) => a.featured) ?? byDate[0];
     const rest = byDate.filter((a) => a.id !== feat.id);
-    return { featured: feat, picks: rest.slice(0, 3), nextUp: rest.slice(3, 6) };
+    return { featured: feat, picks: rest.slice(0, 1), rail: rest.slice(1, 5) };
   }, []);
 
   const results = useMemo(() => {
@@ -305,8 +319,8 @@ export default function BlogPage() {
 
   const isFiltering = query.trim() !== "" || category !== null || tag !== null;
   const facadeIds = useMemo(
-    () => new Set([featured.id, ...picks.map((p) => p.id)]),
-    [featured, picks],
+    () => new Set([featured.id, ...picks.map((p) => p.id), ...rail.map((r) => r.id)]),
+    [featured, picks, rail],
   );
   const gridArticles = isFiltering ? results : results.filter((a) => !facadeIds.has(a.id));
 
@@ -317,217 +331,34 @@ export default function BlogPage() {
       {/* Halos d'ambiance */}
       <div aria-hidden className="pointer-events-none absolute -top-20 left-[15%] -z-10 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute top-[30%] -right-16 -z-10 h-80 w-80 rounded-full bg-accent/10 blur-3xl" />
-      <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 -z-10 h-72 w-72 rounded-full bg-success/10 blur-3xl" />
 
-      {/* ══ Façade éditoriale ═══════════════════════ */}
+      {/* ══ En-tête + recherche (au-dessus des articles) ══ */}
       <motion.section
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        aria-label="À la une du blog"
-        className="grid gap-4 lg:grid-cols-3"
+        transition={{ duration: 0.4 }}
+        aria-label="Recherche et filtres"
+        className="space-y-4"
       >
-        {/* Centre : article vedette */}
-        <button
-          onClick={() => setReading(featured)}
-          className={`group relative overflow-hidden rounded-3xl text-left shadow-lg transition-shadow duration-300 hover:shadow-2xl lg:col-span-2 ${FOCUS_RING} min-h-[420px]`}
-        >
-          <div className={`absolute inset-0 bg-gradient-to-br ${fs.gradient}`} />
-          <div
-            aria-hidden
-            className="absolute inset-0 opacity-[0.15]"
-            style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "22px 22px" }}
-          />
-          <div aria-hidden className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/25 blur-3xl" />
-          <div aria-hidden className="absolute bottom-1/4 right-0 h-72 w-72 translate-x-1/3 rounded-full bg-black/25 blur-3xl" />
-          <EcgMotif className="top-[20%]" />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute left-5 bottom-[38%] select-none font-mono text-[110px] font-black leading-none text-white/10"
-          >
-            ★
-          </span>
-          {/* Visuel vedette : emoji sur disque + orbite en rotation lente */}
-          <div aria-hidden className="absolute right-10 top-8 md:right-14 md:top-12">
-            <div className="qe-spin-slow absolute -inset-8 rounded-full border-2 border-dashed border-white/30" />
-            <div className="grid h-32 w-32 place-items-center rounded-full bg-white/15 shadow-inner backdrop-blur-[2px] md:h-36 md:w-36">
-              <span className="text-7xl [filter:drop-shadow(0_14px_18px_rgba(0,0,0,0.35))] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6 md:text-8xl">
-                {featured.emoji}
-              </span>
-            </div>
-          </div>
-          <Grain />
-          <div className="absolute left-4 top-4 flex items-center gap-2">
-            <span className={GLASS_PILL}>⭐ À la une</span>
-            <span className={GLASS_PILL}>{featured.category}</span>
-          </div>
-
-          {/* Bloc titre découpé */}
-          <div className="absolute bottom-0 left-0 max-w-[92%] rounded-tr-3xl bg-background p-5 pr-7 md:p-6 md:pr-9">
-            <p className="mb-1 text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground">
-              Article vedette
-            </p>
-            <h2 className="text-xl font-extrabold leading-tight tracking-tight text-foreground md:text-3xl">
-              {featured.title.split(" : ")[0]}
-              <span className="block bg-gradient-to-r from-primary to-[#7aa0ff] bg-clip-text text-transparent">
-                {featured.title.includes(" : ") ? featured.title.split(" : ")[1] : ""}
-              </span>
-            </h2>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">{featured.author}</span>
-              <span aria-hidden>·</span>
-              <span>{formatShort(featured.date)}</span>
-              <span aria-hidden>·</span>
-              <span className="tabular-nums">{featured.readMinutes} min</span>
-              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground shadow-sm transition-transform group-hover:translate-x-0.5">
-                Lire l’article
-                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-              </span>
-            </div>
-          </div>
-        </button>
-
-        {/* Colonne droite : manifeste + 3ᵉ sélection */}
-        <div className="relative flex flex-col justify-between gap-3 overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card to-primary/[0.06] p-5 shadow-sm">
-          <div aria-hidden className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
-          <div className="relative">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/[0.08] px-3 py-1 text-xs font-bold text-primary">
               <Newspaper className="h-3.5 w-3.5" aria-hidden />
               Le blog QE.tn
             </span>
-            <h1 className="mt-3 text-2xl font-extrabold leading-[1.1] tracking-tight text-foreground">
-              Apprendre à<br />
+            <h1 className="mt-2 text-2xl font-extrabold leading-tight tracking-tight text-foreground md:text-3xl">
+              Apprendre à{" "}
               <span className="bg-gradient-to-r from-primary via-[#6b93ff] to-accent bg-clip-text text-transparent">
                 mieux apprendre
               </span>
             </h1>
-            <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-              Méthodologie, organisation, gestion du stress et actualités de la
-              plateforme — écrits pour les étudiants en médecine.
-            </p>
-            <div className="mt-3 flex items-center gap-4 border-t border-border/70 pt-3">
-              {[
-                { n: BLOG_ARTICLES.length, label: "guides" },
-                { n: BLOG_CATEGORIES.length, label: "catégories" },
-                { n: ANNOUNCEMENTS.length, label: "annonces" },
-              ].map(({ n, label }) => (
-                <div key={label}>
-                  <p className="text-lg font-extrabold tabular-nums leading-none text-foreground">{n}</p>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Mini-index éditorial : à lire ensuite */}
-            <div className="mt-4 border-t border-border/70 pt-3">
-              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
-                À lire ensuite
-              </p>
-              <ul className="space-y-1.5">
-                {nextUp.map((a, i) => (
-                  <li key={a.id}>
-                    <button
-                      onClick={() => setReading(a)}
-                      className={`group flex w-full items-start gap-2.5 rounded-lg p-1.5 text-left transition-colors hover:bg-muted/60 ${FOCUS_RING}`}
-                    >
-                      <span className="mt-0.5 font-mono text-[10px] font-bold text-muted-foreground/70">
-                        0{i + 4}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="line-clamp-2 block text-[12px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
-                          {a.title}
-                        </span>
-                        <span className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
-                          <span className={`h-1.5 w-1.5 rounded-full ${CATEGORY_STYLES[a.category].dot}`} aria-hidden />
-                          {a.category} · {a.readMinutes} min
-                        </span>
-                      </span>
-                      <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
-          <div className="relative mt-4 flex items-center gap-2">
-            <button
-              onClick={() => {
-                searchRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                searchRef.current?.focus({ preventScroll: true });
-              }}
-              className={`inline-flex h-10 items-center gap-2 rounded-full bg-foreground px-4 text-xs font-bold text-background shadow-md transition-transform hover:-translate-y-0.5 ${FOCUS_RING}`}
-            >
-              Explorer les articles
-            </button>
-            {[
-              { icon: Rss, label: "Flux des annonces" },
-              { icon: BookMarked, label: "Guides méthodologie" },
-              { icon: GraduationCap, label: "Conseils concours" },
-            ].map(({ icon: Icon, label }) => (
-              <span
-                key={label}
-                title={label}
-                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-sm"
-              >
-                <Icon className="h-4 w-4" aria-hidden />
-              </span>
-            ))}
-          </div>
+          <p className="max-w-sm text-[13px] leading-relaxed text-muted-foreground">
+            Méthodologie, organisation, gestion du stress et actualités de la
+            plateforme — écrits pour les étudiants en médecine.
+          </p>
         </div>
-      </motion.section>
 
-      {/* ══ Sélections — rangée de tiers ════════════ */}
-      <motion.section
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.08 }}
-        aria-label="Sélections de la rédaction"
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      >
-        {picks.map((p, i) => (
-          <CoverCard
-            key={p.id}
-            article={p}
-            index={`00${i + 1}`}
-            onOpen={setReading}
-            className="min-h-[230px]"
-          />
-        ))}
-      </motion.section>
-
-      {/* ══ Ticker d'annonces ═══════════════════════ */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.05 }}
-        className="relative overflow-hidden rounded-full bg-foreground py-2.5 text-background shadow-lg"
-        aria-hidden
-      >
-        <div className="qe-marquee flex w-max">
-          {[0, 1].map((copy) => (
-            <div key={copy} className="flex shrink-0 items-center gap-10 pr-10">
-              {ANNOUNCEMENTS.map((an) => {
-                const s = ANNOUNCEMENT_STYLES[an.kind];
-                return (
-                  <span key={`${copy}-${an.id}`} className="flex items-center gap-2 whitespace-nowrap text-xs font-bold">
-                    <s.icon className="h-3.5 w-3.5" />
-                    {s.label} — {an.title}
-                    <span className="ml-6 text-background/40">✦</span>
-                  </span>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* ══ Barre recherche + filtres ═══════════════ */}
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        aria-label="Recherche et filtres"
-      >
         <Card className="rounded-2xl">
           <CardContent className="space-y-3 p-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -601,6 +432,109 @@ export default function BlogPage() {
           </CardContent>
         </Card>
       </motion.section>
+
+      {/* ══ À la une — grille éditoriale ═════════════ */}
+      {!isFiltering && (
+        <motion.section
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.06 }}
+          aria-label="À la une"
+          className="grid gap-4 lg:grid-cols-4 lg:grid-rows-1"
+        >
+          {/* Hero — 2 colonnes */}
+          <button
+            onClick={() => setReading(featured)}
+            className={`group relative min-h-[300px] overflow-hidden rounded-2xl text-left shadow-md transition-shadow duration-300 hover:shadow-xl lg:col-span-2 lg:min-h-[420px] ${FOCUS_RING}`}
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${fs.gradient}`} />
+            <div aria-hidden className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/25 blur-3xl" />
+            <EcgMotif className="top-[26%]" />
+            <span
+              aria-hidden
+              className="absolute right-8 top-8 grid h-28 w-28 place-items-center rounded-full bg-white/15 text-6xl shadow-inner backdrop-blur-[2px] transition-transform duration-500 [filter:drop-shadow(0_14px_18px_rgba(0,0,0,0.35))] group-hover:-rotate-6 group-hover:scale-110 md:h-32 md:w-32 md:text-7xl"
+            >
+              {featured.emoji}
+            </span>
+            <Grain />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+
+            <span className={`absolute left-4 top-4 ${GLASS_PILL}`}>⭐ À la une</span>
+
+            <div className="absolute inset-x-4 bottom-4 md:inset-x-6 md:bottom-6">
+              <span className={`${GLASS_PILL} mb-2`}>{featured.category}</span>
+              <h2 className="text-xl font-bold leading-tight text-white drop-shadow-sm md:text-3xl">
+                {featured.title}
+              </h2>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-medium text-white/85 md:text-xs">
+                <span className="font-bold text-white">{featured.author}</span>
+                <span aria-hidden>·</span>
+                <span>{relativeAge(featured.date)}</span>
+                <span aria-hidden>·</span>
+                <span className="tabular-nums">{featured.readMinutes} min de lecture</span>
+                <span className="ml-auto hidden items-center gap-1 font-bold text-white transition-transform group-hover:translate-x-0.5 sm:inline-flex">
+                  Lire l’article
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                </span>
+              </div>
+            </div>
+          </button>
+
+          {/* Carte secondaire — 1 colonne */}
+          <CoverCard
+            article={picks[0]}
+            onOpen={setReading}
+            className="min-h-[240px] lg:min-h-[420px]"
+          />
+
+          {/* Rail « Dernières publications » — 1 colonne */}
+          <Card className="flex flex-col rounded-2xl">
+            <CardContent className="flex flex-1 flex-col p-4">
+              <div className="mb-3 flex items-center gap-2 border-b border-border pb-2.5">
+                <Flame className="h-4 w-4 text-accent" aria-hidden />
+                <h2 className="text-sm font-bold text-foreground">Dernières publications</h2>
+              </div>
+              <ul className="flex-1 divide-y divide-border/70">
+                {rail.map((a) => (
+                  <li key={a.id}>
+                    <button
+                      onClick={() => setReading(a)}
+                      className={`group flex w-full items-start gap-2.5 py-2.5 text-left ${FOCUS_RING}`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-md bg-gradient-to-br text-sm ${CATEGORY_STYLES[a.category].gradient}`}
+                      >
+                        {a.emoji}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                          <span className={`h-1.5 w-1.5 rounded-full ${CATEGORY_STYLES[a.category].dot}`} aria-hidden />
+                          {a.category}
+                          <span aria-hidden>·</span>
+                          {relativeAge(a.date)}
+                        </span>
+                        <span className="mt-0.5 line-clamp-2 block text-[13px] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                          {a.title}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button
+                onClick={() => {
+                  searchRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+                className={`mt-2 flex items-center gap-1 self-start rounded-lg text-xs font-bold text-primary transition-colors hover:underline ${FOCUS_RING}`}
+              >
+                Afficher plus
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </CardContent>
+          </Card>
+        </motion.section>
+      )}
 
       {/* ══ Annonces ════════════════════════════════ */}
       {!isFiltering && (

@@ -1,6 +1,6 @@
 import type { CalendarEvent, BlockedRange } from "../data/types";
 import { timeToMinutes } from "./dateUtils";
-import { DAY_START_MIN, DAY_END_MIN, SNAP_MINUTES } from "../calendar/gridConstants";
+import { DEFAULT_DAY_START_MIN, DAY_END_MIN, SNAP_MINUTES } from "../calendar/gridConstants";
 
 export interface Range {
   start: number; // minutes from midnight
@@ -102,7 +102,7 @@ export function findFreeSlot(
   durationMin: number,
   opts: FreeSlotOptions = {},
 ): number | null {
-  const dayStart = opts.dayStart ?? DAY_START_MIN;
+  const dayStart = opts.dayStart ?? DEFAULT_DAY_START_MIN;
   const dayEnd = opts.dayEnd ?? DAY_END_MIN;
   const step = opts.step ?? SNAP_MINUTES;
 
@@ -133,6 +133,8 @@ export function freeIntervals(
   day: string,
   durationMin: number,
   ignoreId?: string,
+  dayStart: number = DEFAULT_DAY_START_MIN,
+  dayEnd: number = DAY_END_MIN,
 ): Range[] {
   const occupied: Range[] = [
     ...events
@@ -142,20 +144,25 @@ export function freeIntervals(
   ].sort((a, b) => a.start - b.start);
 
   const free: Range[] = [];
-  let cursor = DAY_START_MIN;
+  let cursor = dayStart;
   for (const r of occupied) {
-    if (r.start > cursor) free.push({ start: cursor, end: Math.min(r.start, DAY_END_MIN) });
+    if (r.start > cursor) free.push({ start: cursor, end: Math.min(r.start, dayEnd) });
     cursor = Math.max(cursor, r.end);
   }
-  if (cursor < DAY_END_MIN) free.push({ start: cursor, end: DAY_END_MIN });
+  if (cursor < dayEnd) free.push({ start: cursor, end: dayEnd });
 
   return free.filter((f) => f.end - f.start >= durationMin);
 }
 
-export function clampStart(startMin: number, durationMin: number): number {
-  const max = DAY_END_MIN - durationMin;
-  if (startMin < DAY_START_MIN) return DAY_START_MIN;
-  if (startMin > max) return Math.max(DAY_START_MIN, max);
+export function clampStart(
+  startMin: number,
+  durationMin: number,
+  dayStart: number = DEFAULT_DAY_START_MIN,
+  dayEnd: number = DAY_END_MIN,
+): number {
+  const max = dayEnd - durationMin;
+  if (startMin < dayStart) return dayStart;
+  if (startMin > max) return Math.max(dayStart, max);
   return startMin;
 }
 

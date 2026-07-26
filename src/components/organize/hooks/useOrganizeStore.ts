@@ -22,7 +22,7 @@ const DEFAULT_STATE: OrganizeState = {
   ],
   notifications: [],
   examDate: DEFAULT_EXAM_DATE,
-  preferences: { lastView: "week", lastDailyRitualMorning: null, lastDailyRitualEvening: null },
+  preferences: { lastView: "week", fullDayGrid: false, lastDailyRitualMorning: null, lastDailyRitualEvening: null },
 };
 
 function load(): OrganizeState {

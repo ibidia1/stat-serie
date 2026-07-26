@@ -476,6 +476,8 @@ export function OrganizePage() {
             onResizeEvent={handleResizeEvent}
             onBacklogDrop={handleBacklogDrop}
             onOpenActions={(event, rect) => setActionAnchor({ event, rect })}
+            fullDay={state.preferences.fullDayGrid ?? false}
+            onFullDayChange={(v) => actions.setPreference("fullDayGrid", v)}
             onReject={flashToast}
           />
           {/* Bouton + : ajouter un cours */}
